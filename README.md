@@ -32,6 +32,12 @@ campos **não-padrão**:
   subdomínio(s) de domínio (DDD) que ele realiza — ver seção "Modelo de domínio"
   abaixo.
 
+O arquivo também ganha um terceiro `kind`, não-padrão: `Domain`, com `spec.glossary`
+(termo/definição/`avoid`), `spec.realizedBy` (Components que o implementam) e
+`spec.source` (caminho do `CONTEXT.md` que o gerou) — é o que unifica a visão de
+produto (DDD) e a arquitetura técnica **no mesmo arquivo**, percorrível por um único
+parser YAML. Ver "Modelo de domínio" e "Catálogo unificado" abaixo.
+
 Essas extensões não quebram compatibilidade com o schema Backstage (que aceita campos
 adicionais em `spec`), mas não são reconhecidas por um Backstage real sem um processor
 customizado — aqui o arquivo é usado apenas como documento de referência da POC.
@@ -77,6 +83,34 @@ oficial do Home Assistant (developers.home-assistant.io, home-assistant.io/docs)
 validados contra a terminologia real usada no código — não é uma documentação as-is
 formal (não há PRD/briefing do projeto, é open source), mas uma leitura de produto
 intencionalmente separada da arquitetura técnica.
+
+## Catálogo unificado (para automação)
+
+`catalog-info.yaml` é o **único arquivo YAML** que reúne Domain + System + Component —
+pensado para ser percorrido por script, não só lido por humano. Dois scripts (stdlib +
+PyYAML) sustentam esse fluxo:
+
+- **`scripts/build_catalog.py`** — regenera os blocos `kind: Domain` do
+  `catalog-info.yaml` a partir de `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md`
+  (front matter de relação + seção `## Linguagem`). Os blocos `System`/`Component`
+  continuam editados à mão. Rode depois de qualquer mudança nos `CONTEXT.md`:
+  ```bash
+  python3 scripts/build_catalog.py          # regrava catalog-info.yaml
+  python3 scripts/build_catalog.py --check  # só valida se está em dia (CI-friendly)
+  ```
+- **`scripts/query_catalog.py`** — algoritmo de travessia para afunilar de subdomínio
+  até uma ação concreta, sem precisar ler o YAML na mão:
+  ```bash
+  python3 scripts/query_catalog.py list-domains
+  python3 scripts/query_catalog.py domain <slug>              # glossário + componentes
+  python3 scripts/query_catalog.py component <nome>
+  python3 scripts/query_catalog.py next-step <slug> [componente]
+  ```
+  `next-step` é o gancho para o próximo estágio do fluxo: dado um subdomínio (e,
+  quando há mais de um componente o realizando, qual deles), imprime o caminho local
+  do repositório e sugere acionar `/graphify` ali — usando o glossário do subdomínio
+  como âncora para navegar o grafo de código gerado — como preparação para redigir
+  PRDs/ADRs específicos daquele subdomínio.
 
 ## Como atualizar
 
