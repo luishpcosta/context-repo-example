@@ -1,0 +1,166 @@
+# Catálogo de arquitetura da POC Home Assistant.
+# Formato: Backstage catalog-info.yaml (backstage.io/v1alpha1) adaptado com campos
+# custom em spec.scope e spec.repository.*. Ver README.md para detalhes da adaptação.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: home-assistant
+  description: >-
+    Ecossistema distribuído Home Assistant: backend, frontend, supervisor de
+    add-ons, sistema operacional dedicado, imagens Docker base e apps clientes
+    móveis.
+spec:
+  owner: home-assistant
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: core
+  description: Backend Python — integrações, motor de automação
+spec:
+  type: service
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Backend Python responsável pelas integrações com dispositivos/serviços
+    externos e pelo motor de automação (engine de regras/eventos).
+  repository:
+    remote: https://github.com/home-assistant/core.git
+    local: /root/development/repositories/poc-home-assistant/core
+    ref: "2026.8.2"
+    commit: 3fb456fa1fe4abbe6b89367b98f282043e9b02dd
+  providesApis:
+    - core-rest-api
+    - core-websocket-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: frontend
+  description: UI web (TypeScript/Lit)
+spec:
+  type: website
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Interface web servida ao usuário final, construída em TypeScript/Lit,
+    consumindo a API REST/WebSocket exposta pelo core.
+  repository:
+    remote: https://github.com/home-assistant/frontend.git
+    local: /root/development/repositories/poc-home-assistant/frontend
+    ref: "20260729.7"
+    commit: 91c28c2f587553a817a315cfbbeee072a6ed5de4
+  consumesApis:
+    - core-rest-api
+    - core-websocket-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: supervisor
+  description: Gerencia add-ons, updates, backups (usado no HA OS)
+spec:
+  type: service
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Gerencia o ciclo de vida de add-ons, atualizações e backups do sistema;
+    roda ao lado do core em instalações baseadas em Home Assistant OS.
+  repository:
+    remote: https://github.com/home-assistant/supervisor.git
+    local: /root/development/repositories/poc-home-assistant/supervisor
+    ref: "2026.08.0"
+    commit: 0b5b0ce15f30f5881962ccb1abbac329a6556b65
+  dependsOn:
+    - component:core
+    - component:docker
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: operating-system
+  description: Distro Linux dedicada (HAOS)
+spec:
+  type: platform
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Distribuição Linux minimalista (Home Assistant OS) que empacota e
+    executa o supervisor e os containers do core em hardware dedicado.
+  repository:
+    remote: https://github.com/home-assistant/operating-system.git
+    local: /root/development/repositories/poc-home-assistant/operating-system
+    ref: "18.2"
+    commit: 3c196f5144ae78e124d2ae1a067c1841af71a51c
+  dependsOn:
+    - component:supervisor
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: docker
+  description: Imagens Docker base usadas pelos demais componentes
+spec:
+  type: library
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Define as imagens Docker base (Python/Alpine e dependências nativas)
+    usadas para construir os containers de core e supervisor.
+  repository:
+    remote: https://github.com/home-assistant/docker.git
+    local: /root/development/repositories/poc-home-assistant/docker
+    ref: "2026.07.0"
+    commit: 0557725d6f875628e90c27a66d7078516ebd4fd9
+  dependencyOf:
+    - component:core
+    - component:supervisor
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: android
+  description: App cliente Android
+spec:
+  type: mobile-app
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Aplicativo cliente Android para controle e monitoramento remoto,
+    consumindo a API do core.
+  repository:
+    remote: https://github.com/home-assistant/android.git
+    local: /root/development/repositories/poc-home-assistant/android
+    ref: "2026.8.3"
+    commit: cfe57e5d46bfaa3bc69db7b42ce7b1324e08be29
+  consumesApis:
+    - core-rest-api
+    - core-websocket-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ios
+  description: App cliente iOS
+spec:
+  type: mobile-app
+  lifecycle: production
+  owner: home-assistant
+  system: home-assistant
+  scope: >-
+    Aplicativo cliente iOS para controle e monitoramento remoto,
+    consumindo a API do core.
+  repository:
+    remote: https://github.com/home-assistant/iOS.git
+    local: /root/development/repositories/poc-home-assistant/iOS
+    ref: "release/2026.7.3/2026.2546"
+    commit: 70e675a8aabfe8740c98aed26d4c03c6c1b8b3d9
+  consumesApis:
+    - core-rest-api
+    - core-websocket-api
