@@ -11,6 +11,14 @@ Uso:
     python3 scripts/query_catalog.py domain <slug>
     python3 scripts/query_catalog.py component <nome>
     python3 scripts/query_catalog.py next-step <slug-do-dominio> [componente]
+    python3 scripts/query_catalog.py ask <slug-do-dominio> "<pergunta>" [componente] [--path <subpasta>]
+
+`ask` prepara (cria no disco) uma pasta descartável em .graphs/<slug>/<componente>/
+e imprime os comandos prontos para rodar /graphify apontando pro código do
+componente, mas escrevendo o grafo dentro do context-repo (não no repo da app) —
+com a pergunta já ancorada nos termos de glossário do subdomínio. Use --path para
+apontar para uma subpasta específica do componente (ex.: --path
+homeassistant/components/automation) em vez do repositório inteiro.
 """
 from __future__ import annotations
 
@@ -144,6 +152,63 @@ def cmd_next_step(domains: dict, components: dict, slug: str, comp_hint: str | N
     return 0
 
 
+def cmd_ask(
+    domains: dict, components: dict, slug: str, question: str,
+    comp_hint: str | None, path_override: str | None,
+) -> int:
+    d = domains.get(slug)
+    if not d:
+        print(f"Subdomínio '{slug}' não encontrado. Use list-domains para ver os slugs.")
+        return 1
+    realized_by = d["spec"].get("realizedBy", [])
+    if not realized_by:
+        print(f"Subdomínio '{slug}' não tem componente técnico associado ainda.")
+        return 1
+
+    if comp_hint and comp_hint in realized_by:
+        comp_name = comp_hint
+    elif len(realized_by) == 1:
+        comp_name = realized_by[0]
+    else:
+        print(
+            f"Subdomínio '{slug}' é realizado por {len(realized_by)} componentes: "
+            f"{', '.join(realized_by)}. Passe um deles, ex.: "
+            f"`ask {slug} \"{question}\" {realized_by[0]}`"
+        )
+        return 1
+
+    comp = components.get(comp_name, {})
+    repo = comp.get("spec", {}).get("repository", {})
+    local = repo.get("local")
+    if not local:
+        print(f"Componente '{comp_name}' não tem repository.local no catalog-info.yaml.")
+        return 1
+
+    source_path = str((Path(local) / path_override).resolve()) if path_override else local
+
+    graph_dir = ROOT / ".graphs" / slug / comp_name
+    graph_dir.mkdir(parents=True, exist_ok=True)
+
+    terms = [t["term"] for t in d["spec"].get("glossary", [])]
+    anchored_question = question
+    hint_terms = [t for t in terms if t.lower() in question.lower()]
+    if not hint_terms:
+        hint_terms = terms[:3]
+
+    print(f"# Pergunta ancorada em '{slug}' / componente '{comp_name}'\n")
+    print(f"Pergunta: {question}")
+    print(f"Termos de glossário relevantes: {', '.join(hint_terms)}\n")
+    print("Grafo temporário — nasce dentro do context-repo, não no repo da app:")
+    print(f"1. `cd {graph_dir}`")
+    print(f"2. `/graphify {source_path}`")
+    print(f'3. `/graphify query "{anchored_question}"`')
+    print(
+        f"\n(pasta criada em `{graph_dir.relative_to(ROOT)}` — descartável, "
+        "`rm -rf .graphs/` para limpar tudo)"
+    )
+    return 0
+
+
 def main() -> int:
     args = sys.argv[1:]
     if not args:
@@ -162,6 +227,15 @@ def main() -> int:
         return cmd_component(components, rest[0])
     if cmd == "next-step" and rest:
         return cmd_next_step(domains, components, rest[0], rest[1] if len(rest) > 1 else None)
+    if cmd == "ask" and len(rest) >= 2:
+        slug, question, *tail = rest
+        path_override = None
+        if "--path" in tail:
+            i = tail.index("--path")
+            path_override = tail[i + 1]
+            del tail[i:i + 2]
+        comp_hint = tail[0] if tail else None
+        return cmd_ask(domains, components, slug, question, comp_hint, path_override)
 
     print(__doc__)
     return 1

@@ -105,12 +105,20 @@ PyYAML) sustentam esse fluxo:
   python3 scripts/query_catalog.py domain <slug>              # glossário + componentes
   python3 scripts/query_catalog.py component <nome>
   python3 scripts/query_catalog.py next-step <slug> [componente]
+  python3 scripts/query_catalog.py ask <slug> "<pergunta>" [componente] [--path <subpasta>]
   ```
   `next-step` é o gancho para o próximo estágio do fluxo: dado um subdomínio (e,
   quando há mais de um componente o realizando, qual deles), imprime o caminho local
   do repositório e sugere acionar `/graphify` ali — usando o glossário do subdomínio
   como âncora para navegar o grafo de código gerado — como preparação para redigir
   PRDs/ADRs específicos daquele subdomínio.
+
+  `ask` vai um passo além: cria uma pasta descartável em `.graphs/<slug>/<componente>/`
+  (git-ignorada) e imprime os comandos prontos para rodar `/graphify` apontando pro
+  código do componente enquanto o grafo nasce **dentro do context-repo**, não no repo
+  da aplicação — com a pergunta já ancorada nos termos do glossário. Passo a passo
+  reproduzível, com uma execução real documentada ponta a ponta, em
+  [`docs/como-perguntar-por-subdominio.md`](./docs/como-perguntar-por-subdominio.md).
 
 ## Como atualizar
 
