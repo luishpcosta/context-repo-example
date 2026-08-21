@@ -28,6 +28,9 @@ campos **não-padrão**:
   - `local`: caminho absoluto do clone local nesta máquina.
   - `ref`: tag/versão em uso (ex. `2026.8.2`).
   - `commit`: hash completo do commit correspondente a essa tag (`git rev-parse HEAD`).
+- `spec.subdomain` (lista de strings): correlaciona o componente técnico com o(s)
+  subdomínio(s) de domínio (DDD) que ele realiza — ver seção "Modelo de domínio"
+  abaixo.
 
 Essas extensões não quebram compatibilidade com o schema Backstage (que aceita campos
 adicionais em `spec`), mas não são reconhecidas por um Backstage real sem um processor
@@ -44,6 +47,36 @@ customizado — aqui o arquivo é usado apenas como documento de referência da 
 | docker | library | github.com/home-assistant/docker |
 | android | mobile-app | github.com/home-assistant/android |
 | ios | mobile-app | github.com/home-assistant/iOS |
+
+## Modelo de domínio (DDD)
+
+Além da visão técnica as-is (`catalog-info.yaml`), este repositório mantém uma visão
+de **produto e capacidades** — subdomínios, bounded contexts e glossário de linguagem
+onipresente — construída e mantida pela skill [blueprintfy](.claude/skills/blueprintfy/SKILL.md)
+(entrevista de domínio + `CONTEXT-MAP.md`/`CONTEXT.md`).
+
+Ponto de entrada: [`CONTEXT-MAP.md`](./CONTEXT-MAP.md). São 5 subdomínios de produto,
+que **não mapeiam 1:1** com os 7 componentes técnicos do catálogo — vários componentes
+realizam o mesmo subdomínio (ex.: `frontend`, `android` e `ios` realizam juntos
+"Client Experience"):
+
+| Subdomínio | Componentes (`catalog-info.yaml`) |
+|---|---|
+| [Automation & State Engine](./docs/dominio/automation-state-engine/CONTEXT.md) | `core` |
+| [Integration Platform](./docs/dominio/integration-platform/CONTEXT.md) | `core` |
+| [Add-on & System Management](./docs/dominio/addon-system-management/CONTEXT.md) | `supervisor`, `operating-system` |
+| [Client Experience](./docs/dominio/client-experience/CONTEXT.md) | `frontend`, `android`, `ios` |
+| [Build & Distribution](./docs/dominio/build-distribution/CONTEXT.md) | `docker` |
+
+A correlação é bidirecional: cada `Component.spec.subdomain` no `catalog-info.yaml`
+aponta para uma entrada deste mapa, e o `CONTEXT-MAP.md` lista os componentes de volta
+na tabela acima.
+
+Os termos do glossário de cada `CONTEXT.md` foram extraídos da documentação pública
+oficial do Home Assistant (developers.home-assistant.io, home-assistant.io/docs) e
+validados contra a terminologia real usada no código — não é uma documentação as-is
+formal (não há PRD/briefing do projeto, é open source), mas uma leitura de produto
+intencionalmente separada da arquitetura técnica.
 
 ## Como atualizar
 

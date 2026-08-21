@@ -25,6 +25,9 @@ spec:
   scope: >-
     Backend Python responsável pelas integrações com dispositivos/serviços
     externos e pelo motor de automação (engine de regras/eventos).
+  subdomain:
+    - automation-state-engine
+    - integration-platform
   repository:
     remote: https://github.com/home-assistant/core.git
     local: /root/development/repositories/poc-home-assistant/core
@@ -47,6 +50,8 @@ spec:
   scope: >-
     Interface web servida ao usuário final, construída em TypeScript/Lit,
     consumindo a API REST/WebSocket exposta pelo core.
+  subdomain:
+    - client-experience
   repository:
     remote: https://github.com/home-assistant/frontend.git
     local: /root/development/repositories/poc-home-assistant/frontend
@@ -69,6 +74,8 @@ spec:
   scope: >-
     Gerencia o ciclo de vida de add-ons, atualizações e backups do sistema;
     roda ao lado do core em instalações baseadas em Home Assistant OS.
+  subdomain:
+    - addon-system-management
   repository:
     remote: https://github.com/home-assistant/supervisor.git
     local: /root/development/repositories/poc-home-assistant/supervisor
@@ -91,6 +98,8 @@ spec:
   scope: >-
     Distribuição Linux minimalista (Home Assistant OS) que empacota e
     executa o supervisor e os containers do core em hardware dedicado.
+  subdomain:
+    - addon-system-management
   repository:
     remote: https://github.com/home-assistant/operating-system.git
     local: /root/development/repositories/poc-home-assistant/operating-system
@@ -112,6 +121,8 @@ spec:
   scope: >-
     Define as imagens Docker base (Python/Alpine e dependências nativas)
     usadas para construir os containers de core e supervisor.
+  subdomain:
+    - build-distribution
   repository:
     remote: https://github.com/home-assistant/docker.git
     local: /root/development/repositories/poc-home-assistant/docker
@@ -134,6 +145,8 @@ spec:
   scope: >-
     Aplicativo cliente Android para controle e monitoramento remoto,
     consumindo a API do core.
+  subdomain:
+    - client-experience
   repository:
     remote: https://github.com/home-assistant/android.git
     local: /root/development/repositories/poc-home-assistant/android
@@ -156,6 +169,8 @@ spec:
   scope: >-
     Aplicativo cliente iOS para controle e monitoramento remoto,
     consumindo a API do core.
+  subdomain:
+    - client-experience
   repository:
     remote: https://github.com/home-assistant/iOS.git
     local: /root/development/repositories/poc-home-assistant/iOS
