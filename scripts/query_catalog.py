@@ -42,10 +42,18 @@ REPO_CACHE = ROOT / ".repo-cache"
 def _resolve_source(comp_name: str, repo: dict) -> tuple[str | None, list[str]]:
     """Resolve o caminho de código-fonte de um componente: local se existir,
     senão clona `repository.remote` (pinado no `commit` do catalog) para
-    `.repo-cache/<comp>/` e reusa em chamadas futuras. Retorna (path, logs)."""
+    `.repo-cache/<comp>/` e reusa em chamadas futuras. Retorna (path, logs).
+
+    `repository.local` é gravado relativo à raiz do context-repo (ex.: `../core`)
+    para não vazar o caminho absoluto de quem gerou o catálogo. Aqui ele é resolvido
+    para absoluto, porque o /graphify é invocado de dentro de .graphs/<slug>/<comp>/
+    — um diretório diferente, onde um caminho relativo apontaria para o lugar errado.
+    (Um `local` absoluto legado continua funcionando: ROOT / "/abs" devolve "/abs".)
+    """
     local = repo.get("local")
-    if local and Path(local).exists():
-        return local, []
+    local_path = (ROOT / local).resolve() if local else None
+    if local_path and local_path.exists():
+        return str(local_path), []
 
     remote = repo.get("remote")
     if not remote:

@@ -25,7 +25,10 @@ campos **não-padrão**:
   dentro do sistema.
 - `spec.repository` (objeto):
   - `remote`: URL do repositório no GitHub.
-  - `local`: caminho absoluto do clone local nesta máquina.
+  - `local`: caminho do clone **relativo à raiz deste repositório** (ex.: `../core`).
+    Relativo, e não absoluto, para o catálogo continuar válido em qualquer máquina e
+    não vazar a estrutura de diretórios de quem o gerou. Se o caminho não existir no
+    clone atual, os scripts caem para `remote` (ver `ask` mais abaixo).
   - `ref`: tag/versão em uso (ex. `2026.8.2`).
   - `commit`: hash completo do commit correspondente a essa tag (`git rev-parse HEAD`).
 - `spec.subdomain` (lista de strings): correlaciona o componente técnico com o(s)

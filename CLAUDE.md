@@ -29,6 +29,11 @@ neste repo para não corromper a correlação entre os dois eixos.
   não precisam ser digitados: `python3 scripts/scan_repos.py --write` cria os
   blocos dos repositórios clonados em `../`, e `--update-refs` reatualiza
   ref/commit quando eles avançam de versão — ver "Como atualizar" no `README.md`.
+- **`repository.local` é sempre relativo à raiz deste repo** (`../core`), nunca
+  absoluto: absoluto quebra em outra máquina e vaza a estrutura de diretórios de
+  quem gerou o catálogo, que é público. Os scripts resolvem para absoluto na hora
+  de invocar o `/graphify` (que roda de outro diretório) — não "conserte" um
+  caminho relativo trocando por absoluto no YAML.
 - Depois de qualquer mudança em `CONTEXT.md`/`CONTEXT-MAP.md`, rode
   `python3 scripts/build_catalog.py --check` antes de commitar. Se falhar, o
   YAML está desatualizado em relação ao markdown — rode sem `--check` para

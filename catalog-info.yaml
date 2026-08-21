@@ -252,7 +252,7 @@ spec:
   - integration-platform
   repository:
     remote: https://github.com/home-assistant/core.git
-    local: /root/development/repositories/poc-home-assistant/core
+    local: ../core
     ref: 2026.8.2
     commit: 3fb456fa1fe4abbe6b89367b98f282043e9b02dd
   providesApis:
@@ -275,7 +275,7 @@ spec:
   - client-experience
   repository:
     remote: https://github.com/home-assistant/frontend.git
-    local: /root/development/repositories/poc-home-assistant/frontend
+    local: ../frontend
     ref: '20260729.7'
     commit: 91c28c2f587553a817a315cfbbeee072a6ed5de4
   consumesApis:
@@ -298,7 +298,7 @@ spec:
   - addon-system-management
   repository:
     remote: https://github.com/home-assistant/supervisor.git
-    local: /root/development/repositories/poc-home-assistant/supervisor
+    local: ../supervisor
     ref: 2026.08.0
     commit: 0b5b0ce15f30f5881962ccb1abbac329a6556b65
   dependsOn:
@@ -321,7 +321,7 @@ spec:
   - addon-system-management
   repository:
     remote: https://github.com/home-assistant/operating-system.git
-    local: /root/development/repositories/poc-home-assistant/operating-system
+    local: ../operating-system
     ref: '18.2'
     commit: 3c196f5144ae78e124d2ae1a067c1841af71a51c
   dependsOn:
@@ -343,7 +343,7 @@ spec:
   - build-distribution
   repository:
     remote: https://github.com/home-assistant/docker.git
-    local: /root/development/repositories/poc-home-assistant/docker
+    local: ../docker
     ref: 2026.07.0
     commit: 0557725d6f875628e90c27a66d7078516ebd4fd9
   dependencyOf:
@@ -366,7 +366,7 @@ spec:
   - client-experience
   repository:
     remote: https://github.com/home-assistant/android.git
-    local: /root/development/repositories/poc-home-assistant/android
+    local: ../android
     ref: 2026.8.3
     commit: cfe57e5d46bfaa3bc69db7b42ce7b1324e08be29
   consumesApis:
@@ -389,7 +389,7 @@ spec:
   - client-experience
   repository:
     remote: https://github.com/home-assistant/iOS.git
-    local: /root/development/repositories/poc-home-assistant/iOS
+    local: ../iOS
     ref: release/2026.7.3/2026.2546
     commit: 70e675a8aabfe8740c98aed26d4c03c6c1b8b3d9
   consumesApis:

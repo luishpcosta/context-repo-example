@@ -115,10 +115,13 @@ imprime os 3 comandos prontos (`cd`, `/graphify <caminho>`, `/graphify query
 "..."`). Você vai executá-los você mesmo nos próximos passos — não é
 necessário copiar/colar manualmente, você já tem os caminhos na saída.
 
-O `<caminho>` impresso normalmente é o `repository.local` do componente
-(ex.: `/root/development/repositories/poc-home-assistant/core`). Se essa
-pasta não existir nesta máquina (ex.: você só tem o `context-repo` clonado,
-sem os 7 repos-fonte), o próprio `ask` percebe e cai para `repository.remote`
+O `<caminho>` impresso é o `repository.local` do componente (guardado no
+catálogo relativo à raiz do repo, ex.: `../core`) já resolvido para absoluto —
+é o absoluto que você usa, porque o `/graphify` roda de dentro de
+`.graphs/<slug>/<componente>/`, onde um caminho relativo apontaria pro lugar
+errado. Se essa pasta não existir nesta máquina (ex.: você só tem o
+`context-repo` clonado, sem os repos-fonte), o próprio `ask` percebe e cai
+para `repository.remote`
 automaticamente — clona o repo pinado no commit documentado no catalog para
 `.repo-cache/<componente>/` (só na primeira vez; reaproveita depois) e usa
 esse caminho no lugar. Você vai ver linhas começando com `>` avisando disso —

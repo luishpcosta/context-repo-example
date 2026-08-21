@@ -19,6 +19,7 @@ o script não tem como saber (descrição, escopo, subdomínio) nascem como plac
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -56,13 +57,26 @@ def normalize_remote(url: str | None) -> str | None:
     return url
 
 
+def relative_local(repo: Path) -> str:
+    """Caminho do repositório relativo à raiz do context-repo (ex.: `../core`).
+
+    Gravar relativo mantém o catálogo portátil e evita vazar o caminho absoluto da
+    máquina de quem gerou. Se o repositório estiver em outro volume (relpath
+    impossível), cai para absoluto — é melhor um caminho feio que um catálogo errado.
+    """
+    try:
+        return os.path.relpath(repo.resolve(), ROOT)
+    except ValueError:
+        return str(repo.resolve())
+
+
 def describe_repo(repo: Path) -> dict:
     ref = git(repo, "describe", "--tags", "--abbrev=0")
     if not ref:
         ref = git(repo, "rev-parse", "--abbrev-ref", "HEAD")
     return {
         "name": repo.name.lower(),
-        "local": str(repo.resolve()),
+        "local": relative_local(repo),
         "remote": normalize_remote(git(repo, "remote", "get-url", "origin")),
         "ref": ref,
         "commit": git(repo, "rev-parse", "HEAD"),
@@ -150,7 +164,11 @@ def main() -> int:
             novos.append(info)
         else:
             repo = existing[info["name"]].setdefault("spec", {}).setdefault("repository", {})
-            if repo.get("commit") != info["commit"] or repo.get("ref") != info["ref"]:
+            # `local` entra na comparação para migrar catálogos antigos, gravados com
+            # caminho absoluto, para o formato relativo/portátil.
+            if (repo.get("commit") != info["commit"]
+                    or repo.get("ref") != info["ref"]
+                    or repo.get("local") != info["local"]):
                 atualizados.append((info, repo))
     print()
 
@@ -164,7 +182,7 @@ def main() -> int:
                 )
             )
         if atualizados:
-            print(f"{len(atualizados)} componente(s) com ref/commit desatualizado no "
+            print(f"{len(atualizados)} componente(s) com ref/commit/local divergente do "
                   "catálogo — rode com --update-refs para atualizar.")
         if not novos and not atualizados:
             print("Catálogo já está em dia com os repositórios encontrados.")
@@ -180,8 +198,9 @@ def main() -> int:
         for info, repo in atualizados:
             repo["ref"] = info["ref"]
             repo["commit"] = info["commit"]
+            repo["local"] = info["local"]
         changed += len(atualizados)
-        print(f"{len(atualizados)} componente(s) com ref/commit atualizado(s).")
+        print(f"{len(atualizados)} componente(s) com ref/commit/local atualizado(s).")
 
     if not changed:
         print("Nada a fazer — catálogo já está em dia.")

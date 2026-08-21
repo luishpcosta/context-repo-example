@@ -92,11 +92,17 @@ python3 scripts/scan_repos.py --write        # grava os blocos Component
 ```
 
 O script varre `repos_root`, acha toda pasta que é um repositório git, e preenche
-`repository.remote` (normalizando SSH→HTTPS), `repository.local`, `repository.ref`
-(tag mais próxima, ou branch) e `repository.commit` (SHA exato do HEAD). Esses quatro
-campos são exatamente o que a consulta da Fase 5 vai ler — é por isso que vale
-preenchê-los por script em vez de à mão: `commit` digitado errado quebra o fallback
-remoto silenciosamente.
+`repository.remote` (normalizando SSH→HTTPS), `repository.local` (**relativo** à raiz
+do context-repo, ex.: `../core`), `repository.ref` (tag mais próxima, ou branch) e
+`repository.commit` (SHA exato do HEAD). Esses quatro campos são exatamente o que a
+consulta da Fase 5 vai ler — é por isso que vale preenchê-los por script em vez de à
+mão: `commit` digitado errado quebra o fallback remoto silenciosamente, e `local`
+absoluto quebra o catálogo em qualquer outra máquina além de expor a estrutura de
+diretórios de quem o gerou (catálogo tende a ser publicado). Os scripts resolvem o
+relativo contra a raiz do repo na hora de usar, então funciona de qualquer diretório.
+
+Num catálogo antigo, gravado com caminhos absolutos, `--update-refs` normaliza os
+`local` existentes para relativo junto com ref/commit.
 
 Sobram três campos que **só um humano sabe** e nascem como `TODO`:
 `metadata.description`, `spec.scope` e `spec.subdomain`. Preencha description e scope

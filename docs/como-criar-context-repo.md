@@ -79,7 +79,7 @@ spec:
   subdomain: []   # preenchido na Fase 2, não agora
   repository:
     remote: https://github.com/<org>/<repo>.git
-    local: /caminho/absoluto/local/do/clone
+    local: ../<repo>   # relativo à raiz do context-repo, nunca absoluto
     ref: <tag-ou-branch-documentada>
     commit: <sha-completo-pinado>
 ```
@@ -88,6 +88,12 @@ Os quatro campos de `repository` (`remote`, `local`, `ref`, `commit`) são
 exatamente o que a automação de consulta da Fase 3 vai ler para resolver
 "componente → caminho de código" — não esqueça nenhum deles, mesmo que pareça
 redundante agora.
+
+**`local` sempre relativo à raiz do context-repo** (`../core`, não
+`/home/fulano/proj/core`). Absoluto quebra em qualquer outra máquina e expõe a
+estrutura de diretórios de quem gerou o catálogo — e como o catálogo costuma ser
+publicado, isso vaza mais do que parece. Os scripts resolvem o relativo contra a
+raiz do repo na hora de usar, então funciona de qualquer diretório.
 
 Na prática, não digite esses quatro campos à mão: `scripts/scan_repos.py`
 (incluído na skill de bootstrap) varre os repositórios já clonados, lê remote,

@@ -57,6 +57,13 @@ a ver com a pergunta.
 Sem `--path`, o comando usa `spec.repository.local` do componente inteiro (ver
 `catalog-info.yaml`).
 
+No catálogo, `repository.local` é guardado **relativo** à raiz do context-repo
+(`../core`), para o arquivo continuar válido em outra máquina e não expor a
+estrutura de diretórios de quem o gerou. Nos comandos impressos ele aparece já
+resolvido para absoluto — necessário porque o `/graphify` é executado de dentro
+de `.graphs/<slug>/<componente>/`, onde um caminho relativo apontaria para o
+lugar errado.
+
 ### Fallback remoto (quando `repository.local` não existe)
 
 Se você clonou só o `context-repo` (sem os 7 repos-fonte em `../`), `ask` e

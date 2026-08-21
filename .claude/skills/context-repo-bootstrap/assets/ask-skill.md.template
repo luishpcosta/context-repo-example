@@ -77,6 +77,11 @@ python3 scripts/query_catalog.py ask <slug> "<pergunta original do usuário>" [c
 ```
 
 Isso cria a pasta `.graphs/<slug>/<componente>/` e imprime os 3 comandos prontos.
+O caminho impresso é o `repository.local` (guardado relativo à raiz do repo, ex.:
+`../<componente>`) já resolvido para absoluto — use o absoluto, porque o `/graphify`
+roda de dentro de `.graphs/<slug>/<componente>/`, onde um relativo apontaria pro
+lugar errado.
+
 Se `repository.local` não existir nesta máquina, o próprio comando cai para
 `repository.remote`, clonando pinado no commit do catálogo em `.repo-cache/` — você
 verá linhas começando com `>` avisando. Repasse isso ao usuário de forma simples
