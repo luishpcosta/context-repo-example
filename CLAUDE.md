@@ -24,8 +24,11 @@ neste repo para não corromper a correlação entre os dois eixos.
   ```bash
   python3 scripts/build_catalog.py
   ```
-- Os blocos `kind: System` e `kind: Component` **são** editados à mão (repo,
-  commit, ref, scope, subdomain) — ver "Como atualizar" no `README.md`.
+- Os blocos `kind: System` e `kind: Component` **são** editados à mão (scope,
+  subdomain, description). Os campos `repository.*` (remote, local, ref, commit)
+  não precisam ser digitados: `python3 scripts/scan_repos.py --write` cria os
+  blocos dos repositórios clonados em `../`, e `--update-refs` reatualiza
+  ref/commit quando eles avançam de versão — ver "Como atualizar" no `README.md`.
 - Depois de qualquer mudança em `CONTEXT.md`/`CONTEXT-MAP.md`, rode
   `python3 scripts/build_catalog.py --check` antes de commitar. Se falhar, o
   YAML está desatualizado em relação ao markdown — rode sem `--check` para
@@ -60,6 +63,12 @@ explicitamente:
 `git add -f` nisso; se crescer demais, `rm -rf .graphs/` é seguro a qualquer
 momento.
 
+Mesma regra vale para `.repo-cache/`: quando `repository.local` de um
+componente não existe nesta máquina (ex.: clone só do `context-repo`, sem os
+7 repos-fonte em `../`), `ask`/`next-step` clonam `repository.remote` pinado
+no `repository.commit` do catalog para lá, como cache reutilizável entre
+perguntas. Também git-ignorado, também descartável (`rm -rf .repo-cache/`).
+
 ## `.claude/skills/blueprintfy/` também não é versionado
 
 É instalação local da skill, não produto do trabalho dela — ver `.gitignore`.
@@ -78,6 +87,18 @@ python3 scripts/query_catalog.py list-domains  # os 5 domínios ainda resolvem?
 Se `build_catalog.py --check` falhar num commit que não devia ter tocado o
 domínio, é sinal de que algo editou o bloco `Domain` do YAML na mão — reverta
 o bloco e regenere.
+
+`python3 scripts/install_hooks.py` instala essa tríade como hook de pre-commit
+(já instalado neste clone). Para pular pontualmente: `git commit --no-verify`.
+
+## Os scripts são genéricos — não hardcode nada neles
+
+`scripts/*.py` não conhecem "Home Assistant": nome do produto, owner, slug do
+system e caminhos vêm de `.context-repo.yml` na raiz. Isso é deliberado — os
+mesmos scripts são copiados para outros projetos pela skill
+`context-repo-bootstrap` (ver `docs/como-criar-context-repo.md`). Se precisar
+de um valor específico do produto, adicione ao `.context-repo.yml` e leia via
+`catalog_config.load_config()`, nunca escreva literal no script.
 
 ## Commits
 

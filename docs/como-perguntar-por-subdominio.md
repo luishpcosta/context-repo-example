@@ -57,6 +57,17 @@ a ver com a pergunta.
 Sem `--path`, o comando usa `spec.repository.local` do componente inteiro (ver
 `catalog-info.yaml`).
 
+### Fallback remoto (quando `repository.local` não existe)
+
+Se você clonou só o `context-repo` (sem os 7 repos-fonte em `../`), `ask` e
+`next-step` detectam que `repository.local` não existe nesta máquina e caem
+para `repository.remote`: clonam o repo (fetch raso, pinado no
+`repository.commit` exato documentado no catalog) para `.repo-cache/<componente>/`
+e usam esse caminho no lugar do `local`. Isso acontece só na primeira vez por
+componente — chamadas seguintes reaproveitam o clone já em `.repo-cache/`, sem
+baixar de novo. `.repo-cache/` é git-ignorado, igual `.graphs/` — descartável,
+`rm -rf .repo-cache/` a qualquer momento.
+
 ### 2. Rode os comandos
 
 ```bash

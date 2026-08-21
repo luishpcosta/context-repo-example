@@ -87,8 +87,11 @@ intencionalmente separada da arquitetura técnica.
 ## Catálogo unificado (para automação)
 
 `catalog-info.yaml` é o **único arquivo YAML** que reúne Domain + System + Component —
-pensado para ser percorrido por script, não só lido por humano. Dois scripts (stdlib +
-PyYAML) sustentam esse fluxo:
+pensado para ser percorrido por script, não só lido por humano. Os scripts (stdlib +
+PyYAML) que sustentam esse fluxo são genéricos: nenhum nome de produto é hardcoded,
+tudo vem de [`.context-repo.yml`](./.context-repo.yml) na raiz — o que permite copiá-los
+para outro projeto sem editar código (ver
+[`docs/como-criar-context-repo.md`](./docs/como-criar-context-repo.md)).
 
 - **`scripts/build_catalog.py`** — regenera os blocos `kind: Domain` do
   `catalog-info.yaml` a partir de `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md`
@@ -120,18 +123,36 @@ PyYAML) sustentam esse fluxo:
   reproduzível, com uma execução real documentada ponta a ponta, em
   [`docs/como-perguntar-por-subdominio.md`](./docs/como-perguntar-por-subdominio.md).
 
+- **`scripts/scan_repos.py`** — descobre os repositórios clonados em `../` e preenche
+  os blocos `kind: Component` sozinho (remote normalizado SSH→HTTPS, ref pela tag mais
+  próxima, commit exato do HEAD), em vez de digitá-los à mão:
+  ```bash
+  python3 scripts/scan_repos.py                # dry-run: mostra o que encontrou
+  python3 scripts/scan_repos.py --write        # adiciona os componentes novos
+  python3 scripts/scan_repos.py --update-refs  # atualiza ref/commit dos existentes
+  ```
+  Os campos que só um humano sabe (`description`, `scope`, `subdomain`) nascem como
+  `TODO` para preenchimento manual.
+
+- **`scripts/install_hooks.py`** — instala um hook de pre-commit que roda a tríade de
+  validação automaticamente, para não depender de memória:
+  ```bash
+  python3 scripts/install_hooks.py
+  ```
+
 ## Como atualizar
 
-Sempre que um dos repositórios em `../` (fora deste repo) mudar de tag/commit, atualize
-o bloco `Component` correspondente em `catalog-info.yaml`:
+Sempre que um dos repositórios em `../` (fora deste repo) mudar de tag/commit:
 
 ```bash
-git -C ../<repo> rev-parse HEAD     # novo commit
-git -C ../<repo> describe --tags    # nova ref/tag
+python3 scripts/scan_repos.py --update-refs   # relê ref/commit direto dos clones
+python3 scripts/build_catalog.py              # regenera os blocos Domain
 ```
 
-Depois valide a sintaxe do YAML:
+Depois valide os três elos (ou deixe o hook de pre-commit fazer isso):
 
 ```bash
+python3 scripts/build_catalog.py --check
 python3 -c "import yaml; list(yaml.safe_load_all(open('catalog-info.yaml')))"
+python3 scripts/query_catalog.py list-domains
 ```
