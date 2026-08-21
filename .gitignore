@@ -1,3 +1,18 @@
+# Instalações locais de skills de TERCEIROS — ferramenta, não produto do trabalho.
+# A saída delas (CONTEXT-MAP.md/CONTEXT.md) é versionada normalmente e continua
+# legível sem elas. As skills escritas PARA este repo (ask, context-repo-bootstrap)
+# são versionadas, porque são o produto.
+.claude/skills/blueprintfy/
+.claude/skills/skill-creator/
 .claude/skills/**/__pycache__/
 .claude/skills/**/*.pyc
+
+# Grafos temporários do /graphify, criados por query_catalog.py ask. Descartáveis.
 .graphs/
+
+# Clones rasos dos repositórios técnicos, usados quando repository.local
+# não existe nesta máquina. Descartáveis.
+.repo-cache/
+
+__pycache__/
+*.pyc
