@@ -1,0 +1,13 @@
+# Semente do catálogo — contém só o bloco `kind: System`.
+# Os `kind: Component` entram via scripts/scan_repos.py --write (ou à mão);
+# os `kind: Domain` são GERADOS por scripts/build_catalog.py a partir de
+# CONTEXT-MAP.md + docs/dominio/*/CONTEXT.md — nunca edite um Domain aqui.
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: {{SYSTEM_SLUG}}
+  description: {{PRODUCT_NAME}}
+spec:
+  owner: {{OWNER}}
+  domains: []
