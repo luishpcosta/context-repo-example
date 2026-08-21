@@ -1,0 +1,6 @@
+# Configuração do context-repo — lida por scripts/*.py.
+product: POC Home Assistant
+owner: home-assistant
+system: home-assistant
+repos_root: ..
+domain_docs: docs/dominio

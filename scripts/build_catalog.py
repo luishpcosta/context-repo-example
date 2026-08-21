@@ -2,18 +2,21 @@
 """Gera um catalog-info.yaml unificado a partir de CONTEXT-MAP.md + CONTEXT.md.
 
 Fonte da verdade (editada por humanos / pela skill blueprintfy):
-  - CONTEXT-MAP.md            -> lista de subdomínios (nome, slug, descrição)
-  - docs/dominio/*/CONTEXT.md -> front matter de relação + seção `## Linguagem`
+  - CONTEXT-MAP.md              -> lista de subdomínios (nome, slug, descrição)
+  - <domain_docs>/*/CONTEXT.md  -> front matter de relação + seção `## Linguagem`
 
-catalog-info.yaml já contém os blocos `System` e `Component` (editados manualmente
-quando um repo muda de tag/commit — ver README.md). Este script preserva esses blocos
-como estão e (re)gera só os blocos `kind: Domain`, escrevendo tudo de volta em um único
-arquivo: Domain(s) + System + Component(s), nessa ordem.
+catalog-info.yaml já contém os blocos `System` e `Component` (editados à mão, ou
+gerados por scripts/scan_repos.py). Este script preserva esses blocos como estão e
+(re)gera só os blocos `kind: Domain`, escrevendo tudo de volta em um único arquivo:
+Domain(s) + System + Component(s), nessa ordem.
+
+Nada aqui é específico de um produto — nome, owner e caminhos vêm do
+`.context-repo.yml` na raiz (ver catalog_config.py).
 
 Uso:
     python3 scripts/build_catalog.py            # regrava catalog-info.yaml
-    python3 scripts/build_catalog.py --check     # só valida, não escreve (exit 1 se
-                                                    o arquivo ficaria diferente)
+    python3 scripts/build_catalog.py --check    # só valida, não escreve (exit 1 se
+                                                #  o arquivo ficaria diferente)
 """
 from __future__ import annotations
 
@@ -23,7 +26,10 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
+from catalog_config import load_config, repo_root
+
+ROOT = repo_root()
+CONFIG = load_config(ROOT)
 CATALOG_PATH = ROOT / "catalog-info.yaml"
 CONTEXT_MAP_PATH = ROOT / "CONTEXT-MAP.md"
 
@@ -36,13 +42,15 @@ AVOID_LINE_RE = re.compile(r"^_Evitar_:\s*(?P<avoid>.+)$")
 
 
 def slugify_from_path(rel_path: str) -> str:
-    # ./docs/dominio/<slug>/CONTEXT.md -> <slug>
+    # ./<domain_docs>/<slug>/CONTEXT.md -> <slug>
     parts = Path(rel_path).parts
     return parts[-2]
 
 
 def parse_context_map(text: str) -> list[dict]:
     """Extrai [{name, slug, description, context_md}] da seção ## Contextos."""
+    if "## Contextos" not in text:
+        return []
     section = text.split("## Contextos", 1)[1].split("\n## ", 1)[0]
     domains = []
     for m in CONTEXT_BULLET_RE.finditer(section):
@@ -93,8 +101,8 @@ def name_to_slug_map(domains: list[dict]) -> dict[str, str]:
 
 
 def load_existing_docs() -> list[dict]:
-    raw = CATALOG_PATH.read_text()
-    return list(yaml.safe_load_all(raw))
+    raw = CATALOG_PATH.read_text(encoding="utf-8")
+    return [d for d in yaml.safe_load_all(raw) if d]
 
 
 def realized_by_map(existing_docs: list[dict]) -> dict[str, list[str]]:
@@ -114,7 +122,7 @@ def build_domain_docs(domains: list[dict], existing_docs: list[dict]) -> list[di
     realized_by = realized_by_map(existing_docs)
     docs = []
     for d in domains:
-        md_text = d["context_md"].read_text()
+        md_text = d["context_md"].read_text(encoding="utf-8")
         front_matter, body = parse_front_matter(md_text)
         glossary = parse_glossary(body)
 
@@ -130,7 +138,11 @@ def build_domain_docs(domains: list[dict], existing_docs: list[dict]) -> list[di
                 }
             )
 
-        spec = {"owner": "home-assistant"}
+        spec = {"owner": CONFIG["owner"]}
+        # Hierarquia opcional: `dominio_pai` no front matter vira spec.parent (Backstage).
+        if front_matter.get("dominio_pai"):
+            parent = front_matter["dominio_pai"]
+            spec["parent"] = slug_by_name.get(parent, parent)
         if depends_on:
             spec["dependsOn"] = depends_on
         if shares_contract:
@@ -151,12 +163,14 @@ def build_domain_docs(domains: list[dict], existing_docs: list[dict]) -> list[di
 
 
 def render(docs: list[dict]) -> str:
+    product = CONFIG["product"]
+    domain_docs = CONFIG["domain_docs"]
     header = (
-        "# Catálogo unificado da POC Home Assistant — GERADO por scripts/build_catalog.py.\n"
+        f"# Catálogo unificado — {product}. GERADO por scripts/build_catalog.py.\n"
         "# Não edite os blocos `kind: Domain` diretamente: eles são reconstruídos a partir de\n"
-        "# CONTEXT-MAP.md + docs/dominio/*/CONTEXT.md (fonte editável, mantida pela skill\n"
+        f"# CONTEXT-MAP.md + {domain_docs}/*/CONTEXT.md (fonte editável, mantida pela skill\n"
         "# blueprintfy). Os blocos `System`/`Component` continuam editados à mão aqui — ver\n"
-        "# README.md (\"Como atualizar\").\n"
+        '# README.md ("Como atualizar").\n'
         "# Formato: Backstage catalog-info.yaml (backstage.io/v1alpha1), adaptado com campos\n"
         "# custom: spec.scope, spec.repository.*, spec.subdomain (Component) e\n"
         "# spec.glossary/spec.realizedBy/spec.source (Domain). Ver README.md.\n"
@@ -170,28 +184,37 @@ def render(docs: list[dict]) -> str:
 def main() -> int:
     check_only = "--check" in sys.argv
 
+    if not CATALOG_PATH.exists():
+        print(f"catalog-info.yaml não existe em {ROOT} — crie os blocos System/Component "
+              "primeiro (scripts/scan_repos.py ajuda).")
+        return 1
+    if not CONTEXT_MAP_PATH.exists():
+        print(f"CONTEXT-MAP.md não existe em {ROOT} — rode a skill blueprintfy primeiro.")
+        return 1
+
     existing_docs = load_existing_docs()
     non_domain_docs = [d for d in existing_docs if d.get("kind") != "Domain"]
     system_docs = [d for d in non_domain_docs if d.get("kind") == "System"]
     component_docs = [d for d in non_domain_docs if d.get("kind") == "Component"]
 
-    domains = parse_context_map(CONTEXT_MAP_PATH.read_text())
+    domains = parse_context_map(CONTEXT_MAP_PATH.read_text(encoding="utf-8"))
     domain_docs = build_domain_docs(domains, non_domain_docs)
 
-    system_docs[0].setdefault("spec", {})["domains"] = [d["slug"] for d in domains]
+    if system_docs:
+        system_docs[0].setdefault("spec", {})["domains"] = [d["slug"] for d in domains]
 
     final_docs = domain_docs + system_docs + component_docs
     rendered = render(final_docs)
 
     if check_only:
-        current = CATALOG_PATH.read_text()
+        current = CATALOG_PATH.read_text(encoding="utf-8")
         if current.strip() == rendered.strip():
             print("catalog-info.yaml está em dia com CONTEXT-MAP.md/CONTEXT.md.")
             return 0
         print("catalog-info.yaml está DESATUALIZADO — rode sem --check para regravar.")
         return 1
 
-    CATALOG_PATH.write_text(rendered)
+    CATALOG_PATH.write_text(rendered, encoding="utf-8")
     print(f"catalog-info.yaml regravado com {len(domain_docs)} Domain(s), "
           f"{len(system_docs)} System, {len(component_docs)} Component(s).")
     return 0

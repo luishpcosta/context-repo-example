@@ -1,4 +1,4 @@
-# Catálogo unificado da POC Home Assistant — GERADO por scripts/build_catalog.py.
+# Catálogo unificado — POC Home Assistant. GERADO por scripts/build_catalog.py.
 # Não edite os blocos `kind: Domain` diretamente: eles são reconstruídos a partir de
 # CONTEXT-MAP.md + docs/dominio/*/CONTEXT.md (fonte editável, mantida pela skill
 # blueprintfy). Os blocos `System`/`Component` continuam editados à mão aqui — ver

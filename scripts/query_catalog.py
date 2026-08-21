@@ -17,48 +17,150 @@ Uso:
 e imprime os comandos prontos para rodar /graphify apontando pro código do
 componente, mas escrevendo o grafo dentro do context-repo (não no repo da app) —
 com a pergunta já ancorada nos termos de glossário do subdomínio. Use --path para
-apontar para uma subpasta específica do componente (ex.: --path
-homeassistant/components/automation) em vez do repositório inteiro.
+apontar para uma subpasta específica do componente (ex.: --path src/billing) em vez
+do repositório inteiro.
+
+Se `spec.repository.local` de um componente não existir nesta máquina, cai para
+`spec.repository.remote`, clonando pinado em `spec.repository.commit` dentro de
+.repo-cache/<componente>/ (git-ignorado, reaproveitado entre chamadas).
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent
+from catalog_config import repo_root
+
+ROOT = repo_root()
 CATALOG_PATH = ROOT / "catalog-info.yaml"
+REPO_CACHE = ROOT / ".repo-cache"
+
+
+def _resolve_source(comp_name: str, repo: dict) -> tuple[str | None, list[str]]:
+    """Resolve o caminho de código-fonte de um componente: local se existir,
+    senão clona `repository.remote` (pinado no `commit` do catalog) para
+    `.repo-cache/<comp>/` e reusa em chamadas futuras. Retorna (path, logs)."""
+    local = repo.get("local")
+    if local and Path(local).exists():
+        return local, []
+
+    remote = repo.get("remote")
+    if not remote:
+        return None, [
+            f"Componente '{comp_name}' não tem repository.local nem repository.remote "
+            "no catalog-info.yaml."
+        ]
+
+    commit = repo.get("commit")
+    cache_dir = REPO_CACHE / comp_name
+    logs = []
+
+    if local:
+        logs.append(f"repository.local (`{local}`) não existe nesta máquina — usando remote.")
+
+    if (cache_dir / ".git").exists():
+        logs.append(f"Usando clone já em cache: `{cache_dir}` (sem novo download).")
+    else:
+        logs.append(
+            f"Clonando `{remote}` (pinado no commit `{commit[:12] if commit else 'HEAD'}`) "
+            f"para `{cache_dir}` — só acontece uma vez, fica em cache pra próxima pergunta."
+        )
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            subprocess.run(["git", "init", "-q", str(cache_dir)], check=True)
+            subprocess.run(
+                ["git", "-C", str(cache_dir), "remote", "add", "origin", remote], check=True
+            )
+            if commit:
+                # Shallow fetch do commit exato — GitHub permite fetch direto por SHA
+                # (allowReachableSHA1InWant), então evita clonar o histórico inteiro.
+                fetch = subprocess.run(
+                    ["git", "-C", str(cache_dir), "fetch", "--depth", "1", "origin", commit],
+                    capture_output=True, text=True,
+                )
+                if fetch.returncode == 0:
+                    subprocess.run(
+                        ["git", "-C", str(cache_dir), "checkout", "-q", "FETCH_HEAD"], check=True
+                    )
+                else:
+                    # Servidor não aceita fetch por SHA solto — cai pro clone raso normal
+                    # e faz checkout do commit se ele estiver alcançável na branch default.
+                    subprocess.run(
+                        ["git", "-C", str(cache_dir), "fetch", "--depth", "50", "origin"],
+                        check=True,
+                    )
+                    subprocess.run(
+                        ["git", "-C", str(cache_dir), "checkout", "-q", commit], check=True
+                    )
+            else:
+                subprocess.run(
+                    ["git", "-C", str(cache_dir), "fetch", "--depth", "1", "origin"], check=True
+                )
+                subprocess.run(
+                    ["git", "-C", str(cache_dir), "checkout", "-q", "FETCH_HEAD"], check=True
+                )
+        except subprocess.CalledProcessError as e:
+            return None, logs + [f"Falha ao clonar '{comp_name}' de {remote}: {e}"]
+
+    return str(cache_dir), logs
 
 
 def load():
-    docs = list(yaml.safe_load_all(CATALOG_PATH.read_text()))
+    docs = [d for d in yaml.safe_load_all(CATALOG_PATH.read_text(encoding="utf-8")) if d]
     domains = {d["metadata"]["name"]: d for d in docs if d["kind"] == "Domain"}
     components = {d["metadata"]["name"]: d for d in docs if d["kind"] == "Component"}
-    system = next(d for d in docs if d["kind"] == "System")
+    system = next((d for d in docs if d["kind"] == "System"), None)
     return domains, components, system
+
+
+def _domain_line(slug: str, d: dict, indent: str = "") -> None:
+    realized = ", ".join(d["spec"].get("realizedBy", [])) or "(nenhum componente)"
+    n_terms = len(d["spec"].get("glossary", []))
+    print(f"{indent}- **{slug}** — {d['metadata']['description']}")
+    print(f"{indent}  realizedBy: {realized} | glossário: {n_terms} termos")
 
 
 def cmd_list_domains(domains: dict, components: dict) -> None:
     print("# Subdomínios de produto\n")
+    # Hierarquia opcional via spec.parent: imprime em árvore quando existir, senão flat.
+    children: dict[str, list[str]] = {}
+    roots: list[str] = []
     for slug, d in domains.items():
-        realized = ", ".join(d["spec"].get("realizedBy", [])) or "(nenhum componente)"
-        n_terms = len(d["spec"].get("glossary", []))
-        print(f"- **{slug}** — {d['metadata']['description']}")
-        print(f"  realizedBy: {realized} | glossário: {n_terms} termos")
+        parent = d["spec"].get("parent")
+        if parent and parent in domains:
+            children.setdefault(parent, []).append(slug)
+        else:
+            roots.append(slug)
+
+    for slug in roots:
+        _domain_line(slug, domains[slug])
+        for child in children.get(slug, []):
+            _domain_line(child, domains[child], indent="  ")
     print(
         "\nPróximo passo: `python3 scripts/query_catalog.py domain <slug>` para "
         "abrir um subdomínio específico."
     )
 
 
-def cmd_domain(domains: dict, components: dict, slug: str) -> None:
+def cmd_domain(domains: dict, components: dict, slug: str) -> int:
     d = domains.get(slug)
     if not d:
         print(f"Subdomínio '{slug}' não encontrado. Use list-domains para ver os slugs.")
         return 1
     spec = d["spec"]
     print(f"# {slug}\n\n{d['metadata']['description']}\n")
+
+    if spec.get("parent"):
+        print(f"Domínio pai: {spec['parent']}\n")
+    sub_domains = [s for s, dd in domains.items() if dd["spec"].get("parent") == slug]
+    if sub_domains:
+        print("## Subdomínios filhos\n")
+        for s in sub_domains:
+            print(f"- {s} — {domains[s]['metadata']['description']}")
+        print()
 
     if spec.get("dependsOn"):
         print("## Depende de\n")
@@ -76,7 +178,7 @@ def cmd_domain(domains: dict, components: dict, slug: str) -> None:
         comp = components.get(comp_name, {})
         repo = comp.get("spec", {}).get("repository", {})
         print(f"- **{comp_name}** — local: `{repo.get('local', '?')}` "
-              f"(ref {repo.get('ref', '?')}, commit {repo.get('commit', '?')[:12]})")
+              f"(ref {repo.get('ref', '?')}, commit {str(repo.get('commit', '?'))[:12]})")
     print()
 
     print(f"## Glossário ({len(spec.get('glossary', []))} termos)\n")
@@ -90,6 +192,7 @@ def cmd_domain(domains: dict, components: dict, slug: str) -> None:
         f"\nPróximo passo: `python3 scripts/query_catalog.py next-step {slug}` para "
         "afunilar até um componente específico e acionar o /graphify."
     )
+    return 0
 
 
 def cmd_component(components: dict, name: str) -> int:
@@ -138,17 +241,19 @@ def cmd_next_step(domains: dict, components: dict, slug: str, comp_hint: str | N
           f"/graphify): {', '.join(terms)}\n")
     for comp_name in targets:
         comp = components.get(comp_name, {})
-        local = comp.get("spec", {}).get("repository", {}).get("local")
+        repo = comp.get("spec", {}).get("repository", {})
+        local, logs = _resolve_source(comp_name, repo)
+        for line in logs:
+            print(f"> {line}")
         print(f"## {comp_name}")
         print(f"1. `cd {local}`")
-        print(f"2. Rode `/graphify` nesse repositório para construir o grafo de "
-              f"conhecimento do código.")
+        print("2. Rode `/graphify` nesse repositório para construir o grafo de "
+              "conhecimento do código.")
         print(f"3. Ao explorar o grafo, use os termos de domínio acima como âncora "
               f"para localizar os nós relevantes (ex.: onde '{terms[0] if terms else '...'}' "
               f"é implementado).")
         print(f"4. Com o grafo + o glossário do subdomínio em mãos, é possível "
-              f"iniciar PRDs/ADRs específicos de '{slug}' (ex.: via skills "
-              f"pm-create-prd/prd-to-adr, se instaladas).\n")
+              f"iniciar PRDs/ADRs específicos de '{slug}'.\n")
     return 0
 
 
@@ -179,9 +284,10 @@ def cmd_ask(
 
     comp = components.get(comp_name, {})
     repo = comp.get("spec", {}).get("repository", {})
-    local = repo.get("local")
+    local, logs = _resolve_source(comp_name, repo)
+    for line in logs:
+        print(f"> {line}")
     if not local:
-        print(f"Componente '{comp_name}' não tem repository.local no catalog-info.yaml.")
         return 1
 
     source_path = str((Path(local) / path_override).resolve()) if path_override else local
@@ -215,6 +321,10 @@ def main() -> int:
         print(__doc__)
         return 1
 
+    if not CATALOG_PATH.exists():
+        print(f"catalog-info.yaml não encontrado em {ROOT}.")
+        return 1
+
     domains, components, system = load()
     cmd, *rest = args
 
@@ -222,7 +332,7 @@ def main() -> int:
         cmd_list_domains(domains, components)
         return 0
     if cmd == "domain" and rest:
-        return cmd_domain(domains, components, rest[0]) or 0
+        return cmd_domain(domains, components, rest[0])
     if cmd == "component" and rest:
         return cmd_component(components, rest[0])
     if cmd == "next-step" and rest:
