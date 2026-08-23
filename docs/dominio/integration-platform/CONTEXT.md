@@ -3,6 +3,8 @@ contexto: Integration Platform
 compartilha_contrato_com:
   - contexto: Automation & State Engine
     contrato: Entity
+  - contexto: Automation & State Engine
+    contrato: Device Automation
 realizado_por:
   - componente: core
     caminho: homeassistant/config_entries.py

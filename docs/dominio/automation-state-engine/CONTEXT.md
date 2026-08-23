@@ -62,6 +62,16 @@ Y", com Conditions opcionais no meio.
 Uma sequência de Actions executada quando acionada manualmente ou chamada por outra
 automação — difere de Automation por não ter Trigger próprio.
 
+**Blueprint**:
+Um modelo reutilizável de Automation ou Script com lacunas a preencher — quem o usa
+informa só o que muda (quais dispositivos, quais horários) em vez de montar a automação
+inteira. Pode ser compartilhado e importado de fora do sistema.
+
+**Device Automation**:
+Os Triggers, Conditions e Actions que um Device oferece prontos pelo seu tipo — permite
+montar uma automação escolhendo o dispositivo, sem saber quais Entities ele expõe por
+dentro.
+
 **Scene**:
 Uma configuração predefinida de estados desejados para um conjunto de entidades (ex.:
 "modo cinema" ajusta luzes, TV e persianas de uma vez).

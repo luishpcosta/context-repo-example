@@ -27,7 +27,11 @@ técnicos estão clonados) — não há arquivo de config separado.
 
 ## Relacionamentos
 
-- **Integration Platform → Automation & State Engine**: compartilha o contrato `Entity` — toda Entity registrada pela Integration Platform é o que o Automation & State Engine observa e manipula.
+- **Integration Platform → Automation & State Engine**: compartilha dois contratos.
+  `Entity` — toda Entity registrada pela Integration Platform é o que o Automation &
+  State Engine observa e manipula. `Device Automation` — cada tipo de Device declara
+  os Triggers, Conditions e Actions que oferece prontos, e o Automation & State Engine
+  os consome para montar automações sem descer ao nível de Entity.
 - **Client Experience → Automation & State Engine**: compartilha o contrato `State` — o Dashboard/Companion App exibe e comanda o State mantido pela State Machine.
 - **Client Experience → Integration Platform**: compartilha o contrato `Entity` — os Cards do Dashboard representam Entities.
 - **Add-on & System Management → Automation & State Engine**: depende do core estar rodando para orquestrar em torno dele (Supervisor gerencia o processo do core).
