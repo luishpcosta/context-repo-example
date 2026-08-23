@@ -75,23 +75,30 @@ cada `CONTEXT.md` que originou termos específicos.
 
 ## Planejamento (to-be)
 
-Product Briefs e PRDs em refinamento vivem em `docs/refinamento/<contexto>/<funcionalidade>/`:
+Discovery de produto vive em `discovery/<assunto>/`, um diretório por assunto em
+refinamento:
 
 ```
-docs/refinamento/<contexto>/<funcionalidade>/
-├── PRODUCT_BRIEF.md              ← o PB (skill pm-create-pb)
-├── NNN-slug-{funcionalidade}-PRD.md   ← os PRDs (skill pm-create-prd)
-└── NNN-slug-{funcionalidade}-ADR.md   ← a arquitetura (skill prd-to-adr)
+discovery/<assunto>/
+├── PRODUCT_BRIEF.md                   ← o PB (skill pm-create-pb)
+├── NNN-slug-<assunto>-PRD.md          ← os PRDs (skill pm-create-prd)
+└── NNN-slug-<assunto>-ADR.md          ← a arquitetura (skill prd-to-adr)
 ```
 
-Cada documento criado aqui precisa ser referenciado nesta seção — o mapa é o único
-ponto de entrada, e o que ele não alcança é invisível para o grafo e para as consultas.
+A pasta é organizada por **assunto**, não por contexto: um assunto que vale a pena
+refinar quase sempre atravessa mais de um contexto, e escolher uma pasta obrigaria a
+eleger um dono arbitrário. A qual contexto cada documento pertence é declarado no front
+matter dele (`contextos`, `afeta`) — que é o que o grafo lê. Caminho não é estrutura
+aqui; front matter é.
 
-O que distingue este repositório de um repositório de planejamento comum é que o PB
-nasce sabendo onde o código está: `pm-create-pb` e `pm-create-prd` leem o mesmo grafo
-que a seção "Correlação entre domínio e código" alimenta, então medir quantos contextos
-uma ideia toca e qual código ela mexe é a mesma travessia. Para aprofundar o
-refinamento até o código-fonte real, a skill `ask` responde sob demanda — leitura e
+Cada documento criado precisa ser referenciado nesta seção: o mapa é o único ponto de
+entrada, e o que ele não alcança é invisível para o grafo e para as consultas.
+
+O que distingue este repositório de um repositório de planejamento comum é que o
+discovery nasce sabendo onde o código está: `pm-create-pb` e `pm-create-prd` leem o
+mesmo grafo que a seção "Correlação entre domínio e código" alimenta, então medir
+quantos contextos uma ideia toca e achar o código que ela mexe são a mesma travessia.
+Para aprofundar até o código-fonte real, a skill `ask` responde sob demanda — leitura e
 apresentação, sem gravar nada, a menos que seja pedido.
 
-Nenhum ainda — nada em refinamento no momento.
+Nenhum ainda — nada em discovery no momento.
