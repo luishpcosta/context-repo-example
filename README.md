@@ -184,6 +184,101 @@ Quem escreve o quê:
 | `pm-create-pb` / `pm-create-prd` / `prd-to-adr` | `docs/discovery/<assunto>/` | o modelo |
 | `ask` | **nada** — só lê e apresenta | tudo |
 
+## Fluxo: construir o domínio
+
+Quem escreve o domínio é sempre a skill `blueprintfy` — nunca à mão, para o glossário
+não degradar. Ela roda em dois modos, e decide sozinha qual usar:
+
+**Modo 1 — bootstrap.** Só quando `CONTEXT-MAP.md` ainda não existe (ver "Como criar
+um do zero" abaixo). Depois da primeira execução, este modo não roda de novo.
+
+**Modo 2 — sessão contínua.** O modo do dia a dia: nomear um termo novo, questionar um
+termo vago, registrar uma relação entre contextos, decidir uma ADR de arquitetura.
+Invoque descrevendo o que precisa modelar:
+
+```
+/blueprintfy essa consulta de aplicabilidade parte de um Device ou de um Blueprint —
+              qual dos dois é o "dono" da pergunta?
+```
+
+Ela lê o `CONTEXT-MAP.md` primeiro, entrevista uma pergunta de cada vez com resposta
+recomendada, cruza contra o código quando o usuário descreve comportamento, e grava
+inline no `CONTEXT.md` do contexto certo assim que um termo é validado — nunca
+acumula para depois.
+
+O que sai de uma sessão, em ordem de raridade:
+
+1. **Um termo no glossário** (`## Linguagem` do `CONTEXT.md`) — o caso comum.
+2. **Uma relação nova** no front matter: `depende_de` (acoplamento), `dominio_pai`
+   (hierarquia), ou `compartilha_contrato_com` (um conceito que atravessa dois
+   contextos — vira aresta no grafo, com o nome do contrato).
+3. **`realizado_por`** — liga o contexto ao componente técnico e, quando o
+   componente for grande, ao caminho dentro dele.
+4. **Uma ADR** — só quando a decisão for difícil de reverter, surpreendente sem
+   contexto, e resultado de um trade-off real; as três condições ao mesmo tempo.
+
+**Exemplo real deste repositório.** `docs/dominio/automation-state-engine/CONTEXT.md`
+tinha o glossário de Automation/Script/Scene, mas nada dizia que `Blueprint` — um
+molde reutilizável de automação — e `Device Automation` — o que um tipo de
+dispositivo já oferece pronto — existiam no código. Uma sessão do `blueprintfy`:
+
+- nomeou os dois termos, com definição de negócio, sem detalhe de implementação;
+- percebeu que `Device Automation` cruza dois contextos (`Device` é do
+  `Integration Platform`, `Trigger`/`Action` são do `Automation & State Engine`) e
+  registrou um **segundo contrato compartilhado** entre eles, ao lado do `Entity`
+  que já existia;
+- declarou os dois caminhos novos em `realizado_por`
+  (`homeassistant/components/blueprint`, `.../device_automation`).
+
+Confira em `docs/dominio/automation-state-engine/CONTEXT.md` e
+`docs/dominio/integration-platform/CONTEXT.md` — front matter e `## Linguagem`.
+
+O gate depois de qualquer mudança: o documento tocado é alcançável a partir do
+`CONTEXT-MAP.md`? Se for um contexto novo, ele precisa de uma entrada na seção
+`## Contextos`. `scripts/validate.py` confere isso — e mais: todo `caminho` novo em
+`realizado_por` é conferido contra o código real, não só contra o front matter.
+
+## Fluxo: gerar um discovery
+
+Três skills em cadeia, uma pergunta de cada vez, nenhuma escreve sem checkpoint:
+
+```
+/pm-create-pb   tive uma ideia: <descreva em texto livre>
+/pm-create-prd  detalha o PB-<id>
+/prd-to-adr     arquitetura do PRD-<id>
+```
+
+**`pm-create-pb`** lê o `CONTEXT-MAP.md` **antes de perguntar qualquer coisa** — é
+esse reconhecimento que permite abrir já dizendo "essa ideia toca os contextos X e Y,
+e Y compartilha o contrato Z com um terceiro". Se a ideia esbarra numa decisão já
+registrada, ela argumenta o conflito e espera confirmação antes de escrever o PB.
+
+**`pm-create-prd`** primeiro decide **quantos** PRDs a ideia pede — a pergunta central
+não é "como escrever o requisito", é "isto é um PRD ou são três". Quatro critérios:
+contextos tocados, atores com jornadas distintas, se as capacidades são acopladas ou
+entregáveis em separado, e o custo de reverter cada uma. A proposta de quebra é
+mostrada e argumentada **antes** de qualquer arquivo existir.
+
+**`prd-to-adr`** propõe a arquitetura, decompõe em atividades por componente, e gera
+Acceptance Criteria com ID (`RF-01`, `RNF-01`) rastreável até o requisito de origem —
+nenhuma AC sem requisito, nenhum requisito sem AC.
+
+**Exemplo real deste repositório**, em `docs/discovery/automacao-por-dispositivo-novo/`:
+
+1. A entrevista do PB parou na segunda pergunta — o `ask` foi ao código e achou que
+   `Blueprint` e `Device Automation` já existiam, sem nome em glossário nenhum (ver
+   "Fluxo: construir o domínio" acima). O PB só foi escrito depois, e o escopo virou
+   o delta real em vez da ideia original.
+2. A hipótese de três capacidades independentes não sobreviveu ao teste par a par: a
+   dependência real era `001 → 002 → 003`, não três PRDs soltos — testar "B funciona
+   sem A?" para cada par é o que revelou isso.
+3. O primeiro `prd-to-adr` seguiu o contrato que a família de comandos WebSocket já
+   usava no código, e registrou uma divergência deliberada de um requisito
+   (`RF-05`) na seção *Consequências* da ADR, em vez de escondê-la.
+
+Todo documento gerado passa pelo mesmo gate: alcançável a partir do `CONTEXT-MAP.md`
+(seção `## Planejamento (to-be)`), ou a entrega está incompleta.
+
 ## Como usar
 
 ### Perguntar como o produto funciona
@@ -210,23 +305,6 @@ print(repo_cache.resolve('core', fm, Path('.'), rev='latest').path)"
 
 # 3. graficar o caminho declarado e perguntar
 ```
-
-### Levar uma ideia até arquitetura
-
-```
-/pm-create-pb   tive uma ideia: <descreva em texto livre>
-/pm-create-prd  detalha o PB-<id>
-/prd-to-adr     arquitetura do PRD-<id>
-```
-
-Cada uma lê o mesmo grafo antes de perguntar qualquer coisa — é por isso que o PB
-nasce sabendo quais contextos a ideia toca e onde o código correspondente mora.
-
-Um exemplo real deste repositório, em `docs/discovery/automacao-por-dispositivo-novo/`: a
-entrevista do PB parou na segunda pergunta porque o `ask` foi ao código e descobriu que
-`Blueprint` e `Device Automation` já existiam — e não tinham nome em glossário nenhum.
-O PB só foi escrito depois de as duas lacunas serem fechadas, e o escopo dele virou o
-delta real em vez da ideia original.
 
 ### Consultar o grafo direto
 
@@ -257,7 +335,7 @@ cd meu-context-repo && git init
 # 4. componentes, automático
 python3 scripts/scan_repos.py --write
 
-# 5. domínio, pela entrevista
+# 5. domínio, pela entrevista (ver "Fluxo: construir o domínio" acima)
 /blueprintfy  começar a modelagem de domínio aqui
 
 # 6. fechar a correlação: realizado_por em cada CONTEXT.md folha
@@ -302,10 +380,12 @@ documento que o cita depois. Quem valida é a entrevista do `blueprintfy`.
 repassa: `blueprintfy` para linguagem, `context-repo-bootstrap` para componente ou
 caminho. Um único escritor por tipo de documento é o que impede o modelo de degradar.
 
-**Nenhuma skill é versionada aqui.** Um clone novo não traz `blueprintfy`, e sem ela os
-scripts param com mensagem explícita — `context_config.py` importa dela o parser de
-front matter. Instale do catálogo (`lup-skills add blueprintfy ask`) antes de rodar
-qualquer coisa.
+**As skills estão versionadas aqui porque este é um repositório de exemplo — não
+copie essa prática para um context-repo de produto.** Lá, versionar significa que
+editar a cópia local não conserta a fonte, e um bug corrigido no catálogo não chega
+sozinho. Ignore `.claude/skills/` de propósito e instale do catálogo
+(`lup-skills add blueprintfy ask ...`); sem `blueprintfy` instalada, os scripts param
+com mensagem explícita — `context_config.py` importa dela o parser de front matter.
 
 ### Limitações conhecidas do grafo
 
@@ -318,8 +398,12 @@ qualquer coisa.
 
 ## Ferramentas
 
-Este repositório não versiona nenhuma skill. Todas são instalações locais, vindas do
-catálogo `ai-lup-skills` (ver `.gitignore`):
+**Este é um repositório de exemplo, e por isso as seis skills do fluxo estão
+versionadas em `.claude/skills/`** — para quem clonar ver o fluxo inteiro sem
+precisar instalar nada do catálogo primeiro. Num context-repo de produto real a
+prática recomendada é a oposta: não versionar, instalar do catálogo (ver "Cuidados").
+`evals/` (fixtures de teste de cada skill) fica de fora mesmo aqui — não é conteúdo
+do fluxo, é ferramenta de quem desenvolve a skill.
 
 | Skill | Papel |
 |---|---|
@@ -327,11 +411,14 @@ catálogo `ai-lup-skills` (ver `.gitignore`):
 | `context-repo-bootstrap` | cria o repositório do zero, estende com componente ou contexto novo |
 | `ask` | pergunta de negócio → código, sem escrever nada |
 | `pm-create-pb` · `pm-create-prd` · `prd-to-adr` | discovery: ideia → PB → PRD → ADR + ACs |
-| `graphify` | lê o código e monta o grafo sob demanda |
+| `graphify` | **não** versionada aqui (é código de terceiro, não deste catálogo) — lê o código e monta o grafo sob demanda |
 
-O que elas escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `docs/discovery/`)
-é versionado normalmente e continua legível sem elas.
+Todas vêm do catálogo `luishpcosta/ai-lup-skills`, que é onde se contribui uma
+correção ou melhoria — editar a cópia aqui não propaga para lá. O que as skills
+escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `docs/discovery/`) é
+sempre versionado e continua legível mesmo sem nenhuma delas instalada.
 
-O `blueprintfy` não é opcional: `scripts/context_config.py` importa dele o parser de
-front matter, e o `validate.py` importa o `repo_cache.py`. Sem ele, os scripts param
-com uma mensagem dizendo isso.
+O `blueprintfy` não é só a mais importante: as outras cinco dependem dela em tempo de
+execução (`scripts/context_config.py` importa dela o parser de front matter,
+`ask`/`validate.py` importam o `repo_cache.py`). Sem ela, os scripts param com uma
+mensagem dizendo isso.

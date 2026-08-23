@@ -1,0 +1,68 @@
+---
+product: {{PRODUCT_NAME}}
+owner: {{OWNER}}
+system: {{SYSTEM_SLUG}}
+repos_root: {{REPOS_ROOT}}
+domain_docs: {{DOMAIN_DOCS}}
+component_docs: {{COMPONENT_DOCS}}
+---
+
+# Context Map
+
+Visão de produto e capacidades de {{PRODUCT_NAME}} — os contextos de domínio (DDD) e os
+componentes técnicos que os realizam. Este mapa é o único ponto de entrada para navegar
+a documentação deste repositório: **o que ele não alcança não existe** para as
+ferramentas.
+
+O front matter acima é a configuração do repo (produto, dono, onde os repositórios
+técnicos estão clonados) — não há arquivo de config separado.
+
+## Contextos
+
+<!-- Preenchido pela skill blueprintfy, um item por contexto:
+- [Nome do Contexto](./{{DOMAIN_DOCS}}/<slug>/CONTEXT.md) — descrição de uma linha
+-->
+
+## Relacionamentos
+
+<!-- Como os contextos se relacionam, em prosa. As arestas de verdade vivem no front
+     matter de cada CONTEXT.md (`depende_de`, `compartilha_contrato_com`,
+     `dominio_pai`) — esta seção é a leitura humana delas. -->
+
+## Componentes técnicos
+
+<!-- Preenchido por `scan_repos.py --write`, um item por repositório de código:
+- [nome](./{{COMPONENT_DOCS}}/<nome>.md) — descrição de uma linha
+
+Cada arquivo guarda remote, local e duas revisões: `commit`, o pin que só muda por
+decisão humana, e `ultimo_visto`, a marca d'água que `--update-refs` atualiza.
+Divergência entre as duas significa que o componente está descasado da documentação. -->
+
+## Correlação entre domínio e código
+
+A correlação mora no front matter de cada `CONTEXT.md`, no campo `realizado_por`, que
+aponta para um componente acima e, opcionalmente, para o caminho dentro dele:
+
+```yaml
+realizado_por:
+  - componente: <nome>
+    caminho: <subpasta>
+```
+
+Declarada uma vez só, na direção domínio → código, porque é essa a direção da consulta:
+dada uma pergunta de negócio, achar o código que a responde. O `caminho` é opcional
+(omitido, vale o repositório inteiro) e existe para que o escopo de leitura do código
+seja **dado**, não heurística — declare-o quando o componente for grande demais para
+ser lido inteiro com qualidade.
+
+## Documentos de negócio (as-is)
+
+<!-- PRDs, briefings e documentação de negócio que já existiam antes deste repo, se
+     houver. Se não houver, diga isso explicitamente e cite de onde o glossário veio. -->
+
+## Planejamento (to-be)
+
+<!-- Product Briefs, PRDs e ADRs em discovery vivem em `docs/discovery/<assunto>/`, um
+     diretório por assunto (não por contexto — um assunto que vale a pena refinar
+     quase sempre atravessa mais de um contexto; a qual pertence cada documento é
+     o front matter, não o caminho). Referencie cada um aqui quando existir. -->
