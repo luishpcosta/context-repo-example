@@ -1,10 +1,11 @@
-# Este é um repo de EXEMPLO: as seis skills do fluxo (ask, blueprintfy,
-# context-repo-bootstrap, pm-create-pb, pm-create-prd, prd-to-adr) são versionadas
-# de propósito em .claude/skills/, para quem clonar ver o fluxo inteiro sem
-# precisar instalar nada do catálogo primeiro — ver README, seção "Ferramentas".
+# Este é um repo de EXEMPLO: as sete skills do fluxo (ask, blueprintfy,
+# context-repo-bootstrap, pm-create-pb, pm-create-prd, prd-to-adr, graphify) são
+# versionadas de propósito em .claude/skills/, para quem clonar ver o fluxo inteiro
+# sem precisar instalar nada primeiro — ver README, seção "Ferramentas".
 # Num context-repo de produto real a prática recomendada é a oposta (não
-# versionar, instalar do catálogo ai-lup-skills) — a exceção é só para este repo.
-# evals/ (fixtures de teste da própria skill) e caches ficam de fora mesmo assim.
+# versionar, instalar do catálogo/do skill marketplace) — a exceção é só para
+# este repo. evals/ (fixtures de teste da própria skill), caches e o marcador de
+# versão do install global (.graphify_version) ficam de fora mesmo assim.
 .claude/skills/*
 !.claude/skills/ask/
 !.claude/skills/blueprintfy/
@@ -12,9 +13,11 @@
 !.claude/skills/pm-create-pb/
 !.claude/skills/pm-create-prd/
 !.claude/skills/prd-to-adr/
+!.claude/skills/graphify/
 .claude/skills/*/evals/
 .claude/skills/*/**/__pycache__/
 .claude/skills/*/**/*.pyc
+.claude/skills/graphify/.graphify_version
 
 # Skills de outras plataformas agênticas / de terceiros, fora do fluxo deste
 # repo — nunca versionadas.

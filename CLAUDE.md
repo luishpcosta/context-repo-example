@@ -114,11 +114,13 @@ do formato; não reimplemente um segundo parser aqui).
 ## As skills estão versionadas aqui, e isso é a exceção, não a regra
 
 Este é o repositório de **exemplo** do padrão: `ask`, `blueprintfy`,
-`context-repo-bootstrap`, `pm-create-pb`, `pm-create-prd` e `prd-to-adr` estão em
-`.claude/skills/`, versionadas de propósito, para que quem clonar veja o fluxo inteiro
-sem instalar nada primeiro (ver README, "Ferramentas"). `graphify` não está — é código
-de terceiro, fora do catálogo `ai-lup-skills`. `evals/` de cada skill fica de fora
-mesmo aqui; não é conteúdo do fluxo.
+`context-repo-bootstrap`, `pm-create-pb`, `pm-create-prd`, `prd-to-adr` e `graphify`
+estão em `.claude/skills/`, versionadas de propósito, para que quem clonar veja o
+fluxo inteiro sem instalar nada primeiro (ver README, "Ferramentas"). `graphify` é a
+exceção dentro da exceção: a definição da skill está versionada como as demais, mas
+ela instala o pacote que a executa (`graphifyy`) em tempo de execução — não há nada
+Python bundled aqui para essa. `evals/` de cada skill fica de fora mesmo aqui; não é
+conteúdo do fluxo.
 
 **Num context-repo de produto real, a prática é a oposta: nunca versionar, sempre
 instalar do catálogo.** Não replique o que este repositório faz — ele é a exceção

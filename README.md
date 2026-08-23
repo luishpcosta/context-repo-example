@@ -398,11 +398,11 @@ com mensagem explícita — `context_config.py` importa dela o parser de front m
 
 ## Ferramentas
 
-**Este é um repositório de exemplo, e por isso as seis skills do fluxo estão
+**Este é um repositório de exemplo, e por isso as sete skills do fluxo estão
 versionadas em `.claude/skills/`** — para quem clonar ver o fluxo inteiro sem
-precisar instalar nada do catálogo primeiro. Num context-repo de produto real a
-prática recomendada é a oposta: não versionar, instalar do catálogo (ver "Cuidados").
-`evals/` (fixtures de teste de cada skill) fica de fora mesmo aqui — não é conteúdo
+precisar instalar nada primeiro. Num context-repo de produto real a prática
+recomendada é a oposta: não versionar, instalar do catálogo (ver "Cuidados").
+`evals/` de cada skill (fixtures de teste) fica de fora mesmo aqui — não é conteúdo
 do fluxo, é ferramenta de quem desenvolve a skill.
 
 | Skill | Papel |
@@ -411,12 +411,16 @@ do fluxo, é ferramenta de quem desenvolve a skill.
 | `context-repo-bootstrap` | cria o repositório do zero, estende com componente ou contexto novo |
 | `ask` | pergunta de negócio → código, sem escrever nada |
 | `pm-create-pb` · `pm-create-prd` · `prd-to-adr` | discovery: ideia → PB → PRD → ADR + ACs |
-| `graphify` | **não** versionada aqui (é código de terceiro, não deste catálogo) — lê o código e monta o grafo sob demanda |
+| `graphify` | lê o código e monta o grafo sob demanda; a peça que `ask` aciona por baixo |
 
-Todas vêm do catálogo `luishpcosta/ai-lup-skills`, que é onde se contribui uma
-correção ou melhoria — editar a cópia aqui não propaga para lá. O que as skills
-escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `docs/discovery/`) é
-sempre versionado e continua legível mesmo sem nenhuma delas instalada.
+Seis delas vêm do catálogo `luishpcosta/ai-lup-skills` — é lá que se contribui uma
+correção ou melhoria, editar a cópia aqui não propaga para lá. `graphify` é diferente
+das outras seis: a definição da skill está versionada aqui como as demais, mas ela
+mesma instala em tempo de execução o pacote que a executa (`graphifyy`, via `uv`/`pip`
+— ver `SKILL.md` da skill) na primeira vez que roda; não há nada Python bundled para
+manter em sincronia. O que as skills escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de
+componente, `docs/discovery/`) é sempre versionado e continua legível mesmo sem
+nenhuma delas instalada.
 
 O `blueprintfy` não é só a mais importante: as outras cinco dependem dela em tempo de
 execução (`scripts/context_config.py` importa dela o parser de front matter,
