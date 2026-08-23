@@ -1,121 +1,142 @@
 # CLAUDE.md — context-repo
 
-Este repositório é **só documentação/manifesto** da POC Home Assistant — nenhum
-código executável do produto vive aqui. Ele descreve, em dois eixos que se
-correlacionam, os 7 repositórios clonados em `../` (`core`, `frontend`,
-`supervisor`, `operating-system`, `docker`, `android`, `iOS`):
+Este repositório é **só documentação** da POC Home Assistant — nenhum código executável
+do produto vive aqui. Ele descreve, em dois eixos que se correlacionam, os 7
+repositórios clonados em `../` (`core`, `frontend`, `supervisor`, `operating-system`,
+`docker`, `android`, `iOS`):
 
-- **Arquitetura técnica as-is** — `catalog-info.yaml` (Backstage catalog-info
-  adaptado).
-- **Domínio de produto (DDD)** — `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md`
-  (mantido pela skill `blueprintfy`).
+- **domínio de produto (DDD)** — `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md`
+  (mantido pela skill `blueprintfy`);
+- **arquitetura técnica as-is** — `docs/componentes/*.md`.
 
-Antes de editar qualquer coisa aqui, leia `README.md` — ele documenta o formato,
-as adaptações e os scripts. Este arquivo é sobre **como um agente deve operar**
-neste repo para não corromper a correlação entre os dois eixos.
+Antes de editar qualquer coisa, leia `README.md` — ele documenta o formato e os
+scripts. Este arquivo é sobre **como um agente deve operar** aqui sem corromper a
+correlação entre os dois eixos.
 
-## Fonte da verdade — não edite o gerado
+## Não existe arquivo gerado. Não crie um.
 
-- **`catalog-info.yaml` tem duas origens no mesmo arquivo.** Os blocos
-  `kind: Domain` são **gerados** por `scripts/build_catalog.py` a partir de
-  `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md` — **nunca edite um bloco
-  `Domain` diretamente**, a próxima regeneração sobrescreve. Para mudar
-  glossário/relações de domínio, edite o `CONTEXT.md` do subdomínio e rode:
-  ```bash
-  python3 scripts/build_catalog.py
-  ```
-- Os blocos `kind: System` e `kind: Component` **são** editados à mão (scope,
-  subdomain, description). Os campos `repository.*` (remote, local, ref, commit)
-  não precisam ser digitados: `python3 scripts/scan_repos.py --write` cria os
-  blocos dos repositórios clonados em `../`, e `--update-refs` reatualiza
-  ref/commit quando eles avançam de versão — ver "Como atualizar" no `README.md`.
-- **`repository.local` é sempre relativo à raiz deste repo** (`../core`), nunca
-  absoluto: absoluto quebra em outra máquina e vaza a estrutura de diretórios de
-  quem gerou o catálogo, que é público. Os scripts resolvem para absoluto na hora
-  de invocar o `/graphify` (que roda de outro diretório) — não "conserte" um
-  caminho relativo trocando por absoluto no YAML.
-- Depois de qualquer mudança em `CONTEXT.md`/`CONTEXT-MAP.md`, rode
-  `python3 scripts/build_catalog.py --check` antes de commitar. Se falhar, o
-  YAML está desatualizado em relação ao markdown — rode sem `--check` para
-  regravar, não edite o YAML na mão para "consertar".
+Todo dado estrutural mora no **front matter de um markdown**, e é editado à mão. Não
+há build step, não há catálogo derivado, não há arquivo de config separado.
 
-## Mudar o modelo de domínio — siga o protocolo da skill blueprintfy
+Este repositório já teve um `catalog-info.yaml` gerado, com um hook que existia só para
+detectar quando ele divergia da fonte. Ele foi removido de propósito. Se você se pegar
+querendo "gerar um índice" ou "materializar um catálogo consolidado" a partir dos
+markdowns, **não faça** — é exatamente a segunda verdade que este repositório removeu.
+Uma view em memória, montada na hora e descartada, é o padrão certo (é o que o
+`graph_query.py` da `blueprintfy` faz).
 
-`CONTEXT-MAP.md`/`docs/dominio/*/CONTEXT.md` não são markdown livre — são
-mantidos pela skill `blueprintfy` (`.claude/skills/blueprintfy/SKILL.md`, local,
-fora do versionamento — ver abaixo). Regras que valem mesmo sem invocar a skill
-explicitamente:
+## O mapa é o único ponto de entrada
 
-- **Nunca grave um termo de glossário sem validar com o usuário primeiro.** Um
-  termo errado aqui se propaga pro `catalog-info.yaml` na próxima regeneração.
-- **Todo `CONTEXT.md` precisa estar referenciado em `CONTEXT-MAP.md`.** Um
-  `CONTEXT.md` órfão é invisível para `build_catalog.py` (ele só lê os caminhos
-  listados na seção `## Contextos` do mapa) e para o gate de criação de
-  documento da skill.
-- **Front matter de relação é estrutural, não decorativo.** `depende_de` e
-  `compartilha_contrato_com` no topo de cada `CONTEXT.md` viram
-  `spec.dependsOn`/`spec.sharesContractWith` no `Domain` gerado — se a relação
-  não existe lá, não existe no catálogo.
-- Ao adicionar um subdomínio novo: crie `docs/dominio/<slug>/CONTEXT.md`,
-  referencie-o em `CONTEXT-MAP.md`, rode `build_catalog.py`, e adicione
-  `spec.subdomain: [<slug>]` no(s) `Component` técnico(s) que o realizam.
+`CONTEXT-MAP.md` é o marcador do repositório (se ele existe, isto é um context-repo), a
+config (front matter: `product`, `owner`, `system`, `repos_root`, `domain_docs`,
+`component_docs`) e o índice.
 
-## `.graphs/` é lixo descartável, nunca versionado
+**O que o mapa não alcança não existe.** Um `CONTEXT.md` ou um doc de componente que
+não esteja referenciado no mapa é invisível para as ferramentas e some em silêncio —
+por isso `validate.py` trata órfão como **erro**, não aviso. Ao criar qualquer
+documento aqui, registre-o na seção certa do mapa no mesmo movimento.
 
-`scripts/query_catalog.py ask` cria grafos temporários do `graphify` em
-`.graphs/<slug>/<componente>/` — propositalmente git-ignorado
-(`docs/como-perguntar-por-subdominio.md` explica o porquê). Nunca faça
-`git add -f` nisso; se crescer demais, `rm -rf .graphs/` é seguro a qualquer
-momento.
+## A correlação é declarada uma vez, na direção domínio → código
 
-Mesma regra vale para `.repo-cache/`: quando `repository.local` de um
-componente não existe nesta máquina (ex.: clone só do `context-repo`, sem os
-7 repos-fonte em `../`), `ask`/`next-step` clonam `repository.remote` pinado
-no `repository.commit` do catalog para lá, como cache reutilizável entre
-perguntas. Também git-ignorado, também descartável (`rm -rf .repo-cache/`).
+No front matter do `CONTEXT.md`, nunca no doc do componente:
 
-## `.claude/skills/blueprintfy/` também não é versionado
-
-É instalação local da skill, não produto do trabalho dela — ver `.gitignore`.
-Se sumir de um clone novo deste repo, a skill precisa ser reinstalada
-separadamente; os `CONTEXT.md`/`CONTEXT-MAP.md` que ela já escreveu continuam
-válidos e legíveis sem ela (são markdown comum).
-
-## Antes de commitar, valide os três elos
-
-```bash
-python3 scripts/build_catalog.py --check   # catalog-info.yaml em dia com o markdown?
-python3 -c "import yaml; list(yaml.safe_load_all(open('catalog-info.yaml')))"  # YAML íntegro?
-python3 scripts/query_catalog.py list-domains  # os 5 domínios ainda resolvem?
+```yaml
+realizado_por:
+  - componente: core
+    caminho: homeassistant/components/automation
 ```
 
-Se `build_catalog.py --check` falhar num commit que não devia ter tocado o
-domínio, é sinal de que algo editou o bloco `Domain` do YAML na mão — reverta
-o bloco e regenere.
+- A direção é essa porque é a direção da consulta: dada uma pergunta de negócio, achar
+  o código. Não declare o inverso no doc do componente — seriam duas verdades.
+- `caminho` é **opcional**: omitido, vale o repositório inteiro. Declare-o quando o
+  componente for grande demais para ser lido inteiro (hoje, só o `core`, com 619MB).
+  Um `caminho` errado é pior que `caminho` nenhum.
+- `componente` tem que casar com um arquivo em `docs/componentes/`.
 
-`python3 scripts/install_hooks.py` instala essa tríade como hook de pre-commit
-(já instalado neste clone). Para pular pontualmente: `git commit --no-verify`.
+## `commit` é pin, `ultimo_visto` é marca d'água — não confunda os donos
+
+```yaml
+commit: 3fb456…        # PIN: só um humano move, com `scan_repos.py --pin`
+ultimo_visto: 3fb456…  # MARCA D'ÁGUA: `--update-refs` atualiza sozinho
+```
+
+O pin descreve o código que a documentação afirma descrever, e é o que um PB/PRD/ADR
+cita. **Nunca atualize o `commit` só porque o upstream andou** — isso apaga a âncora de
+todo documento que o citou. `commit != ultimo_visto` não é um erro a consertar: é o
+sinal de que alguém precisa conferir a documentação contra o código novo. Promover o
+pin é o ato deliberado que registra "conferi".
+
+## Antes de commitar
+
+```bash
+python3 scripts/validate.py
+```
+
+Um comando só. `python3 scripts/install_hooks.py` o instala como pre-commit (já
+instalado neste clone); para pular pontualmente, `git commit --no-verify`.
+
+O `validate.py` **nunca escreve** — ele falha com a instrução do que rodar. Se você
+estiver tentado a fazê-lo corrigir o que encontra, não: um hook que altera o conteúdo
+do commit produz commits diferentes em máquinas diferentes a partir do mesmo
+`git commit`.
+
+Ele toca a rede só quando precisa (conferir um `caminho` de um componente que não está
+clonado nesta máquina). `local` existente vence e não baixa nada; senão usa o
+`.repo-cache`; só o primeiro encontro com um componente exige rede. Use `--offline`
+para não baixar nada.
+
+## Mudar o modelo de domínio — protocolo da skill blueprintfy
+
+`CONTEXT-MAP.md`/`docs/dominio/*/CONTEXT.md` não são markdown livre — são mantidos pela
+skill `blueprintfy`. Regras que valem mesmo sem invocá-la explicitamente:
+
+- **Nunca grave um termo de glossário sem validar com o usuário primeiro.**
+- **Front matter de relação é estrutural, não decorativo.** `depende_de`,
+  `compartilha_contrato_com`, `dominio_pai` e `realizado_por` são as arestas do grafo —
+  se a relação não está lá, ela não existe.
+- Hierarquia de contextos é por `dominio_pai`, com a profundidade que a modelagem DDD
+  pedir.
+- Ao adicionar um contexto: crie `docs/dominio/<slug>/CONTEXT.md`, referencie-o em
+  `CONTEXT-MAP.md`, e declare `realizado_por` apontando para o(s) componente(s) que o
+  realizam.
 
 ## Os scripts são genéricos — não hardcode nada neles
 
-`scripts/*.py` não conhecem "Home Assistant": nome do produto, owner, slug do
-system e caminhos vêm de `.context-repo.yml` na raiz. Isso é deliberado — os
-mesmos scripts são copiados para outros projetos pela skill
-`context-repo-bootstrap` (ver `docs/como-criar-context-repo.md`). Se precisar
-de um valor específico do produto, adicione ao `.context-repo.yml` e leia via
-`catalog_config.load_config()`, nunca escreva literal no script.
+`scripts/*.py` não conhecem "Home Assistant": nome do produto, owner e caminhos vêm do
+front matter do `CONTEXT-MAP.md`. Se precisar de um valor específico do produto,
+adicione-o ao front matter do mapa e leia via `context_config.load_config()`, nunca
+escreva literal no script.
+
+Os scripts são **stdlib-only**. Não introduza dependência externa (PyYAML inclusive — o
+parser de front matter vem da `blueprintfy`, via `context_config`, que é a fonte única
+do formato; não reimplemente um segundo parser aqui).
+
+## Skills instaladas não são versionadas
+
+`.claude/skills/blueprintfy/` e `graphify` são instalações locais — ferramenta, não
+produto do trabalho (ver `.gitignore`). O que elas escrevem continua versionado e
+legível sem elas. Se sumirem de um clone novo, precisam ser reinstaladas: sem a
+`blueprintfy`, `context_config` não acha o parser de front matter e os scripts param
+com uma mensagem dizendo isso.
+
+## `.graphs/` e `.repo-cache/` são lixo descartável
+
+Git-ignorados de propósito. `rm -rf` em qualquer um dos dois é seguro a qualquer
+momento; nunca faça `git add -f` neles.
+
+## Ao adicionar componente técnico novo (8º repo)
+
+1. Clone-o em `../` (fora deste repo).
+2. `python3 scripts/scan_repos.py --write` cria `docs/componentes/<nome>.md`.
+3. Preencha `titulo` e o corpo, e referencie-o na seção "Componentes técnicos" do
+   `CONTEXT-MAP.md`.
+4. Decida com o usuário qual contexto ele realiza e declare `realizado_por` no
+   `CONTEXT.md` desse contexto — ou, se exigir um contexto novo, siga a seção de
+   modelo de domínio acima.
+5. `python3 scripts/validate.py` antes de commitar.
 
 ## Commits
 
-Conventional Commits, mensagem no imperativo, PT-BR, um commit por mudança
-lógica (ex.: `feat(dominio): ...`, `chore(repo): ...`) — sem exceção, é a
-convenção usada em todo o histórico deste repo.
-
-## Ao adicionar componente técnico novo (8º repo, etc.)
-
-1. Clone-o em `../` (fora deste repo) e registre a versão/commit.
-2. Adicione o bloco `kind: Component` em `catalog-info.yaml` (à mão, mesmo
-   formato dos outros 7 — `spec.scope`, `spec.repository.*`, `spec.subdomain`).
-3. Decida com o usuário a qual subdomínio existente ele pertence, ou se exige
-   um subdomínio novo (siga "Mudar o modelo de domínio" acima).
-4. Rode a validação da seção anterior antes de commitar.
+Conventional Commits, mensagem no imperativo, PT-BR, um commit por mudança lógica
+(ex.: `feat(dominio): ...`, `chore(repo): ...`) — sem exceção, é a convenção usada em
+todo o histórico deste repo.

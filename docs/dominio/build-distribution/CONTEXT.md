@@ -1,6 +1,8 @@
 ---
 contexto: Build & Distribution
 depende_de: []
+realizado_por:
+  - componente: docker
 ---
 
 # Build & Distribution
@@ -9,7 +11,8 @@ Subdomínio genérico de suporte: garante que os demais componentes cheguem ao u
 final de forma consistente e executável em diferentes arquiteturas de hardware. Não
 carrega diferencial de produto — é infraestrutura de entrega.
 
-Realizado tecnicamente pelo componente `docker` (ver `../../../catalog-info.yaml`).
+Realizado tecnicamente pelo componente [`docker`](../../componentes/docker.md) —
+ver `realizado_por` no front matter acima.
 
 ## Linguagem
 

@@ -1,161 +1,157 @@
 # context-repo
 
-Repositório documental da POC Home Assistant. Não contém código executável — só o
-catálogo de arquitetura da aplicação distribuída, em `catalog-info.yaml`.
+Repositório documental da POC Home Assistant. Não contém código executável — descreve,
+em dois eixos que se correlacionam, os 7 repositórios do produto clonados em `../`:
 
-## Formato
+- **domínio de produto (DDD)** — quais capacidades existem e com que linguagem se fala
+  delas;
+- **arquitetura técnica as-is** — quais repositórios de código realizam cada capacidade,
+  e em que ponto do código.
 
-`catalog-info.yaml` segue o formato **Backstage Software Catalog**
-(`apiVersion: backstage.io/v1alpha1`), o padrão de mercado (CNCF/Spotify Backstage)
-para descrever sistemas distribuídos como um `System` composto por `Component`s
-relacionados entre si via `dependsOn`, `dependencyOf`, `providesApis` e `consumesApis`.
+O elo entre os dois é o que dá valor ao repositório: a partir de uma pergunta em
+linguagem de negócio, chegar ao código que a responde.
 
-Esse formato foi escolhido em vez de alternativas como Docker Compose, Open Application
-Model/KubeVela ou Score porque seu propósito é puramente documental/de catálogo — não
-executa nem orquestra nada — o que combina com o objetivo aqui: só representar a
-arquitetura e as dependências.
+## O formato: front matter, e só
 
-## Adaptação em relação ao padrão Backstage
+Não existe arquivo gerado, nem arquivo de configuração separado. **Todo dado
+estrutural mora no front matter de um markdown**, e o markdown continua legível sem
+nenhuma ferramenta.
 
-O schema oficial não tem campos para escopo de responsabilidade nem para localização
-de repositório/versão. Para cobrir isso, cada `Component.spec` foi estendido com dois
-campos **não-padrão**:
+```
+CONTEXT-MAP.md              ← ponto de entrada, marcador do repo e config
+docs/dominio/<slug>/CONTEXT.md   ← um contexto de domínio: glossário e relações
+docs/componentes/<nome>.md       ← um repositório de código: onde está, em que revisão
+```
 
-- `spec.scope` (string): descrição livre da responsabilidade/fronteira do componente
-  dentro do sistema.
-- `spec.repository` (objeto):
-  - `remote`: URL do repositório no GitHub.
-  - `local`: caminho do clone **relativo à raiz deste repositório** (ex.: `../core`).
-    Relativo, e não absoluto, para o catálogo continuar válido em qualquer máquina e
-    não vazar a estrutura de diretórios de quem o gerou. Se o caminho não existir no
-    clone atual, os scripts caem para `remote` (ver `ask` mais abaixo).
-  - `ref`: tag/versão em uso (ex. `2026.8.2`).
-  - `commit`: hash completo do commit correspondente a essa tag (`git rev-parse HEAD`).
-- `spec.subdomain` (lista de strings): correlaciona o componente técnico com o(s)
-  subdomínio(s) de domínio (DDD) que ele realiza — ver seção "Modelo de domínio"
-  abaixo.
+O `CONTEXT-MAP.md` é o único ponto de entrada: **o que ele não alcança não existe**
+para as ferramentas. Um documento fora do mapa é invisível, e é por isso que
+`scripts/validate.py` trata órfão como erro.
 
-O arquivo também ganha um terceiro `kind`, não-padrão: `Domain`, com `spec.glossary`
-(termo/definição/`avoid`), `spec.realizedBy` (Components que o implementam) e
-`spec.source` (caminho do `CONTEXT.md` que o gerou) — é o que unifica a visão de
-produto (DDD) e a arquitetura técnica **no mesmo arquivo**, percorrível por um único
-parser YAML. Ver "Modelo de domínio" e "Catálogo unificado" abaixo.
+A configuração do repo é o front matter do próprio mapa:
 
-Essas extensões não quebram compatibilidade com o schema Backstage (que aceita campos
-adicionais em `spec`), mas não são reconhecidas por um Backstage real sem um processor
-customizado — aqui o arquivo é usado apenas como documento de referência da POC.
+```yaml
+product: POC Home Assistant
+owner: home-assistant
+system: home-assistant
+repos_root: ..
+domain_docs: docs/dominio
+component_docs: docs/componentes
+```
 
-## Componentes catalogados
+### Por que não um catálogo gerado
 
-| componente | tipo | repositório remoto |
-|---|---|---|
-| core | service | github.com/home-assistant/core |
-| frontend | website | github.com/home-assistant/frontend |
-| supervisor | service | github.com/home-assistant/supervisor |
-| operating-system | platform | github.com/home-assistant/operating-system |
-| docker | library | github.com/home-assistant/docker |
-| android | mobile-app | github.com/home-assistant/android |
-| ios | mobile-app | github.com/home-assistant/iOS |
+Este repositório já teve um `catalog-info.yaml` no formato Backstage, gerado a partir
+dos mesmos markdowns por um build step, com um hook de pre-commit que existia só para
+detectar quando o gerado divergia da fonte. O arquivo foi removido: um artefato
+derivado e versionado só cria uma segunda verdade para manter em dia. O que se perde é
+compatibilidade com um Backstage real; o que se ganha é que drift entre fonte e
+catálogo passa a ser impossível por construção, em vez de detectável.
 
-## Modelo de domínio (DDD)
+## A correlação domínio → código
 
-Além da visão técnica as-is (`catalog-info.yaml`), este repositório mantém uma visão
-de **produto e capacidades** — subdomínios, bounded contexts e glossário de linguagem
-onipresente — construída e mantida pela skill [blueprintfy](.claude/skills/blueprintfy/SKILL.md)
-(entrevista de domínio + `CONTEXT-MAP.md`/`CONTEXT.md`).
+Declarada uma vez só, no front matter do `CONTEXT.md`, na direção da consulta:
 
-Ponto de entrada: [`CONTEXT-MAP.md`](./CONTEXT-MAP.md). São 5 subdomínios de produto,
-que **não mapeiam 1:1** com os 7 componentes técnicos do catálogo — vários componentes
-realizam o mesmo subdomínio (ex.: `frontend`, `android` e `ios` realizam juntos
-"Client Experience"):
+```yaml
+realizado_por:
+  - componente: core
+    caminho: homeassistant/components/automation
+  - componente: core
+    caminho: homeassistant/components/script
+```
 
-| Subdomínio | Componentes (`catalog-info.yaml`) |
+`caminho` é opcional — omitido, vale o repositório inteiro. Ele existe para que o
+escopo de leitura do código seja **dado**, não heurística: sem ele, uma pergunta sobre
+automação obrigaria a varrer os 619MB do `core`. Vale declará-lo quando o componente é
+grande demais para ser lido inteiro com qualidade; nos outros (o maior depois do `core`
+tem 222MB) ele só adiciona uma chance de apontar para o lugar errado.
+
+| Contexto | Componentes |
 |---|---|
-| [Automation & State Engine](./docs/dominio/automation-state-engine/CONTEXT.md) | `core` |
-| [Integration Platform](./docs/dominio/integration-platform/CONTEXT.md) | `core` |
+| [Automation & State Engine](./docs/dominio/automation-state-engine/CONTEXT.md) | `core` (5 caminhos) |
+| [Integration Platform](./docs/dominio/integration-platform/CONTEXT.md) | `core` (3 caminhos) |
 | [Add-on & System Management](./docs/dominio/addon-system-management/CONTEXT.md) | `supervisor`, `operating-system` |
 | [Client Experience](./docs/dominio/client-experience/CONTEXT.md) | `frontend`, `android`, `ios` |
 | [Build & Distribution](./docs/dominio/build-distribution/CONTEXT.md) | `docker` |
 
-A correlação é bidirecional: cada `Component.spec.subdomain` no `catalog-info.yaml`
-aponta para uma entrada deste mapa, e o `CONTEXT-MAP.md` lista os componentes de volta
-na tabela acima.
+Os 5 contextos **não mapeiam 1:1** com os 7 repositórios: `core` realiza dois contextos,
+e três repositórios realizam juntos o `Client Experience`.
 
-Os termos do glossário de cada `CONTEXT.md` foram extraídos da documentação pública
-oficial do Home Assistant (developers.home-assistant.io, home-assistant.io/docs) e
-validados contra a terminologia real usada no código — não é uma documentação as-is
-formal (não há PRD/briefing do projeto, é open source), mas uma leitura de produto
-intencionalmente separada da arquitetura técnica.
+## Duas revisões por componente, com donos diferentes
 
-## Catálogo unificado (para automação)
+Cada doc em `docs/componentes/` carrega:
 
-`catalog-info.yaml` é o **único arquivo YAML** que reúne Domain + System + Component —
-pensado para ser percorrido por script, não só lido por humano. Os scripts (stdlib +
-PyYAML) que sustentam esse fluxo são genéricos: nenhum nome de produto é hardcoded,
-tudo vem de [`.context-repo.yml`](./.context-repo.yml) na raiz — o que permite copiá-los
-para outro projeto sem editar código (ver
-[`docs/como-criar-context-repo.md`](./docs/como-criar-context-repo.md)).
+```yaml
+commit: 3fb456fa1fe4abbe6b89367b98f282043e9b02dd        # o pin
+ultimo_visto: 3fb456fa1fe4abbe6b89367b98f282043e9b02dd  # a marca d'água
+```
 
-- **`scripts/build_catalog.py`** — regenera os blocos `kind: Domain` do
-  `catalog-info.yaml` a partir de `CONTEXT-MAP.md` + `docs/dominio/*/CONTEXT.md`
-  (front matter de relação + seção `## Linguagem`). Os blocos `System`/`Component`
-  continuam editados à mão. Rode depois de qualquer mudança nos `CONTEXT.md`:
+- **`commit` é o pin.** Descreve o código que esta documentação afirma descrever. Só
+  um humano o move, com `--pin`. É o que um PB/PRD/ADR cita quando diz "conforme o
+  commit X" — e é por isso que ele não pode ser um alvo móvel.
+- **`ultimo_visto` é a marca d'água.** `--update-refs` a atualiza sozinho. É o "como
+  está hoje", que uma pergunta sobre o comportamento atual do produto quer.
+
+`commit != ultimo_visto` é, literalmente, o sinal de que o componente está descasado: o
+código andou e a documentação ainda não foi conferida contra ele.
+
+## Scripts
+
+Stdlib-only, sem dependências externas. Nada de nome de produto hardcoded: tudo vem do
+front matter do `CONTEXT-MAP.md`.
+
+- **`scripts/validate.py`** — integridade referencial. Roda no pre-commit e nunca
+  escreve: falha com a instrução do que rodar.
   ```bash
-  python3 scripts/build_catalog.py          # regrava catalog-info.yaml
-  python3 scripts/build_catalog.py --check  # só valida se está em dia (CI-friendly)
+  python3 scripts/validate.py             # valida tudo
+  python3 scripts/validate.py --offline    # não baixa nada; o que faltar vira aviso
   ```
-- **`scripts/query_catalog.py`** — algoritmo de travessia para afunilar de subdomínio
-  até uma ação concreta, sem precisar ler o YAML na mão:
+  Pega link quebrado no mapa, documento órfão, `realizado_por` citando componente
+  inexistente, relação apontando para contexto que não existe, e `caminho` que o
+  upstream moveu — este último conferido contra o código real.
+
+- **`scripts/scan_repos.py`** — descobre os repositórios clonados em `../` e mantém os
+  docs de componente em dia.
   ```bash
-  python3 scripts/query_catalog.py list-domains
-  python3 scripts/query_catalog.py domain <slug>              # glossário + componentes
-  python3 scripts/query_catalog.py component <nome>
-  python3 scripts/query_catalog.py next-step <slug> [componente]
-  python3 scripts/query_catalog.py ask <slug> "<pergunta>" [componente] [--path <subpasta>]
+  python3 scripts/scan_repos.py                # dry-run: o que encontrou e o que divergiu
+  python3 scripts/scan_repos.py --write        # cria os docs dos componentes novos
+  python3 scripts/scan_repos.py --update-refs  # atualiza ultimo_visto (nunca o pin)
+  python3 scripts/scan_repos.py --pin          # promove o pin para o ultimo_visto
   ```
-  `next-step` é o gancho para o próximo estágio do fluxo: dado um subdomínio (e,
-  quando há mais de um componente o realizando, qual deles), imprime o caminho local
-  do repositório e sugere acionar `/graphify` ali — usando o glossário do subdomínio
-  como âncora para navegar o grafo de código gerado — como preparação para redigir
-  PRDs/ADRs específicos daquele subdomínio.
 
-  `ask` vai um passo além: cria uma pasta descartável em `.graphs/<slug>/<componente>/`
-  (git-ignorada) e imprime os comandos prontos para rodar `/graphify` apontando pro
-  código do componente enquanto o grafo nasce **dentro do context-repo**, não no repo
-  da aplicação — com a pergunta já ancorada nos termos do glossário. Passo a passo
-  reproduzível, com uma execução real documentada ponta a ponta, em
-  [`docs/como-perguntar-por-subdominio.md`](./docs/como-perguntar-por-subdominio.md).
-
-- **`scripts/scan_repos.py`** — descobre os repositórios clonados em `../` e preenche
-  os blocos `kind: Component` sozinho (remote normalizado SSH→HTTPS, ref pela tag mais
-  próxima, commit exato do HEAD), em vez de digitá-los à mão:
-  ```bash
-  python3 scripts/scan_repos.py                # dry-run: mostra o que encontrou
-  python3 scripts/scan_repos.py --write        # adiciona os componentes novos
-  python3 scripts/scan_repos.py --update-refs  # atualiza ref/commit dos existentes
-  ```
-  Os campos que só um humano sabe (`description`, `scope`, `subdomain`) nascem como
-  `TODO` para preenchimento manual.
-
-- **`scripts/install_hooks.py`** — instala um hook de pre-commit que roda a tríade de
-  validação automaticamente, para não depender de memória:
+- **`scripts/install_hooks.py`** — instala o pre-commit que roda o `validate.py`.
   ```bash
   python3 scripts/install_hooks.py
   ```
 
+- **`scripts/context_config.py`** — módulo compartilhado: acha a raiz do repo, lê a
+  config do mapa e itera contextos/componentes. Não reimplementa o parser de front
+  matter: importa o da skill `blueprintfy`, que é a fonte única do formato.
+
 ## Como atualizar
 
-Sempre que um dos repositórios em `../` (fora deste repo) mudar de tag/commit:
+Quando um dos repositórios em `../` mudar de tag/commit:
 
 ```bash
-python3 scripts/scan_repos.py --update-refs   # relê ref/commit direto dos clones
-python3 scripts/build_catalog.py              # regenera os blocos Domain
+python3 scripts/scan_repos.py                # o que divergiu?
+python3 scripts/scan_repos.py --update-refs  # atualiza a marca d'água
 ```
 
-Depois valide os três elos (ou deixe o hook de pre-commit fazer isso):
+O pin fica onde está de propósito. Depois de conferir que a documentação ainda descreve
+o código novo:
 
 ```bash
-python3 scripts/build_catalog.py --check
-python3 -c "import yaml; list(yaml.safe_load_all(open('catalog-info.yaml')))"
-python3 scripts/query_catalog.py list-domains
+python3 scripts/scan_repos.py --pin
 ```
+
+## Consultar o código a partir de uma pergunta de negócio
+
+Esta parte está sendo reconstruída. A skill `ask` ainda aponta para scripts que este
+repositório não tem mais (`query_catalog.py`), e volta a funcionar quando o eixo de
+componente entrar no grafo da `blueprintfy` — junto com a extração dela para o catálogo
+de skills. Até lá, `docs/como-perguntar-por-subdominio.md` descreve o fluxo antigo.
+
+## Ferramentas
+
+As skills que este repositório carrega (`blueprintfy`, `graphify`) são instaladas
+localmente e não versionadas aqui — ver `.gitignore`. O que elas escrevem
+(`CONTEXT-MAP.md`, `CONTEXT.md`) é versionado normalmente e continua legível sem elas.

@@ -5,6 +5,10 @@ compartilha_contrato_com:
     contrato: State
   - contexto: Integration Platform
     contrato: Entity
+realizado_por:
+  - componente: frontend
+  - componente: android
+  - componente: ios
 ---
 
 # Client Experience
@@ -13,8 +17,9 @@ Subdomínio responsável por como o usuário efetivamente vê e controla o lar �
 mobile e wearables. É onde o valor do Automation & State Engine e da Integration
 Platform chega até a pessoa.
 
-Realizado tecnicamente pelos componentes `frontend`, `android` e `ios` (ver
-`../../../catalog-info.yaml`).
+Realizado tecnicamente pelos componentes [`frontend`](../../componentes/frontend.md),
+[`android`](../../componentes/android.md) e [`ios`](../../componentes/ios.md) — ver
+`realizado_por` no front matter acima.
 
 ## Linguagem
 

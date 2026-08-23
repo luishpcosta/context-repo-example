@@ -1,6 +1,9 @@
 ---
 contexto: Add-on & System Management
 depende_de: [Automation & State Engine]
+realizado_por:
+  - componente: supervisor
+  - componente: operating-system
 ---
 
 # Add-on & System Management
@@ -9,8 +12,9 @@ Subdomínio de suporte que cuida do ciclo de vida do sistema em si: instalar/atu
 add-ons, fazer backup, manter o host saudável. Não é o diferencial de produto, mas é
 o que torna o produto operável de forma confiável em hardware dedicado.
 
-Realizado tecnicamente pelos componentes `supervisor` e `operating-system` (ver
-`../../../catalog-info.yaml`).
+Realizado tecnicamente pelos componentes [`supervisor`](../../componentes/supervisor.md)
+e [`operating-system`](../../componentes/operating-system.md) — ver `realizado_por` no
+front matter acima.
 
 ## Linguagem
 

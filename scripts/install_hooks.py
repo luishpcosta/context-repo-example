@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
-"""Instala um hook de pre-commit que roda a tríade de validação do context-repo.
+"""Instala um hook de pre-commit que valida a integridade referencial do context-repo.
 
-A tríade existe porque os três elos podem sair de sincronia silenciosamente:
-  1. catalog-info.yaml em dia com CONTEXT-MAP.md/CONTEXT.md  (build_catalog.py --check)
-  2. o YAML continua íntegro/parseável
-  3. os subdomínios ainda resolvem  (query_catalog.py list-domains)
+Antes existia uma tríade, e ela existia por causa de um arquivo GERADO que podia sair
+de sincronia com o markdown. Esse arquivo não existe mais: o front matter é a fonte
+única, então esse modo de falha morreu por construção e a tríade virou um comando só.
 
-Sem o hook, esquecer o passo 1 deixa o catálogo desatualizado sem nenhum aviso até
-alguém notar a divergência manualmente.
+O que o hook pega agora é o que a tríade nunca cobria — elos apontando para o nada:
+documento órfão que o CONTEXT-MAP.md não alcança, `realizado_por` citando componente
+inexistente, `caminho` que o upstream moveu, `local` com case errado.
+
+O hook NUNCA escreve. Ele falha com a instrução do que rodar, porque um hook que
+altera o conteúdo do commit produz commits diferentes em máquinas diferentes a partir
+do mesmo `git commit`.
 
 Uso:
     python3 scripts/install_hooks.py              # instala .git/hooks/pre-commit
@@ -21,7 +25,7 @@ import stat
 import sys
 from pathlib import Path
 
-from catalog_config import repo_root
+from context_config import repo_root
 
 ROOT = repo_root()
 HOOK_PATH = ROOT / ".git" / "hooks" / "pre-commit"
@@ -29,16 +33,13 @@ SENTINEL = "# context-repo-validation-hook"
 
 HOOK_BODY = f"""#!/bin/sh
 {SENTINEL} — gerado por scripts/install_hooks.py, seguro de remover.
-# Valida os três elos do context-repo antes de deixar o commit passar.
+# Valida a integridade referencial do context-repo antes de deixar o commit passar.
 set -e
 
 cd "$(git rev-parse --show-toplevel)"
 
-echo "[context-repo] validando catálogo..."
-python3 scripts/build_catalog.py --check
-python3 -c "import yaml; list(yaml.safe_load_all(open('catalog-info.yaml', encoding='utf-8')))"
-python3 scripts/query_catalog.py list-domains > /dev/null
-echo "[context-repo] ok."
+echo "[context-repo] validando os elos..."
+python3 scripts/validate.py
 """
 
 
@@ -72,7 +73,8 @@ def main() -> int:
     HOOK_PATH.write_text(HOOK_BODY, encoding="utf-8")
     HOOK_PATH.chmod(HOOK_PATH.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     print(f"Hook instalado em {HOOK_PATH}")
-    print("A partir de agora, todo commit valida catálogo + YAML + subdomínios.")
+    print("A partir de agora, todo commit valida os elos do mapa, dos contextos e\n"
+          "dos componentes (inclusive os `caminho`, contra o código real).")
     print("Para pular pontualmente (ex.: commit de WIP): git commit --no-verify")
     return 0
 

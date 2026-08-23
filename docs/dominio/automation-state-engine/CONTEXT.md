@@ -1,6 +1,17 @@
 ---
 contexto: Automation & State Engine
 depende_de: [Integration Platform]
+realizado_por:
+  - componente: core
+    caminho: homeassistant/core.py
+  - componente: core
+    caminho: homeassistant/helpers
+  - componente: core
+    caminho: homeassistant/components/automation
+  - componente: core
+    caminho: homeassistant/components/script
+  - componente: core
+    caminho: homeassistant/components/scene
 ---
 
 # Automation & State Engine
@@ -9,7 +20,8 @@ Núcleo diferenciador do produto: mantém o estado de tudo na casa e permite rea
 mudanças através de automações. É o subdomínio de negócio mais central — sem ele o
 sistema seria só um agregador passivo de integrações.
 
-Realizado tecnicamente pelo componente `core` (ver `../../../catalog-info.yaml`).
+Realizado tecnicamente pelo componente [`core`](../../componentes/core.md), nos caminhos
+listados em `realizado_por` no front matter acima.
 
 ## Linguagem
 
