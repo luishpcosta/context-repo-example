@@ -1,0 +1,23 @@
+# Context Map
+
+## Contextos
+
+- [{Nome do contexto}](./{caminho}/CONTEXT.md) — {uma frase sobre a responsabilidade
+  do contexto}
+
+## Relacionamentos
+
+- **{Contexto A} → {Contexto B}**: {como um contexto afeta/aciona o outro — evento,
+  chamada, dado compartilhado}
+
+<!-- Seções opcionais: só incluir quando esses documentos existirem no repo. -->
+
+## Documentos de negócio (as-is)
+
+- **{Nome do contexto}**: [{descrição curta}](./{caminho-da-pasta-de-dominio}/) —
+  {o que o leitor encontra ali: regras de negócio, detalhamento por área do domínio}
+
+## Planejamento (to-be)
+
+- **{Nome do contexto}**: [{descrição curta}](./{caminho-da-pasta-de-refinamento}/) —
+  {o que o leitor encontra ali: PRODUCT_BRIEF, PRDs, ADRs, SPECs por funcionalidade}

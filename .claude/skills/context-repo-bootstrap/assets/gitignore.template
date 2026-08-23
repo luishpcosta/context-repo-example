@@ -1,0 +1,11 @@
+# Instalações locais de skills — não são produto do trabalho, são ferramenta.
+# (A saída delas — CONTEXT-MAP.md/CONTEXT.md — é versionada normalmente.)
+.claude/skills/**/__pycache__/
+.claude/skills/**/*.pyc
+
+# Grafos temporários do /graphify, criados sob demanda pela skill ask. Descartáveis.
+.graphs/
+
+# Clones rasos dos repositórios técnicos, usados quando o `local` do doc de
+# componente não existe nesta máquina. Descartáveis.
+.repo-cache/
