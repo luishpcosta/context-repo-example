@@ -12,6 +12,10 @@ realizado_por:
     caminho: homeassistant/components/script
   - componente: core
     caminho: homeassistant/components/scene
+  - componente: core
+    caminho: homeassistant/components/blueprint
+  - componente: core
+    caminho: homeassistant/components/device_automation
 ---
 
 # Automation & State Engine
