@@ -1,17 +1,17 @@
-# Instalações locais de skills de TERCEIROS — ferramenta, não produto do trabalho.
-# A saída delas (CONTEXT-MAP.md/CONTEXT.md) é versionada normalmente e continua
-# legível sem elas. As skills escritas PARA este repo (ask, context-repo-bootstrap)
-# são versionadas, porque são o produto.
+# Instalações locais de skills — ferramenta, não produto do trabalho. Elas são do
+# catálogo canônico (ai-lup-skills), instaladas aqui, não terceiros descartáveis: sem
+# a blueprintfy, scripts/context_config.py não acha o parser de front matter. A saída
+# delas (CONTEXT-MAP.md/CONTEXT.md) é versionada e continua legível sem elas.
 .claude/skills/blueprintfy/
 .claude/skills/skill-creator/
 .claude/skills/**/__pycache__/
 .claude/skills/**/*.pyc
 
-# Grafos temporários do /graphify, criados por query_catalog.py ask. Descartáveis.
+# Grafos temporários do /graphify, criados sob demanda pela skill ask. Descartáveis.
 .graphs/
 
-# Clones rasos dos repositórios técnicos, usados quando repository.local
-# não existe nesta máquina. Descartáveis.
+# Clones rasos dos repositórios técnicos, usados quando o `local` do doc de
+# componente não existe nesta máquina. Descartáveis.
 .repo-cache/
 
 __pycache__/
