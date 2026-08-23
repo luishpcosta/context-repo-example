@@ -113,8 +113,11 @@ do formato; não reimplemente um segundo parser aqui).
 
 ## Skills instaladas não são versionadas
 
-`.claude/skills/blueprintfy/` e `graphify` são instalações locais — ferramenta, não
-produto do trabalho (ver `.gitignore`). O que elas escrevem continua versionado e
+`blueprintfy`, `ask`, `context-repo-bootstrap` e `graphify` são instalações locais,
+vindas do catálogo `ai-lup-skills` — ferramenta, não produto do trabalho (ver
+`.gitignore`). O `ask` e o `context-repo-bootstrap` já foram versionados aqui e não são
+mais: eles servem qualquer context-repo, então uma cópia por repositório seria uma
+cópia por repositório para manter em dia. O que elas escrevem continua versionado e
 legível sem elas. Se sumirem de um clone novo, precisam ser reinstaladas: sem a
 `blueprintfy`, `context_config` não acha o parser de front matter e os scripts param
 com uma mensagem dizendo isso.
