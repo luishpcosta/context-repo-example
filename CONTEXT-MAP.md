@@ -109,3 +109,4 @@ apresentação, sem gravar nada, a menos que seja pedido.
   - [001 — Aplicabilidade de Blueprint por tipo de Device](./discovery/automacao-por-dispositivo-novo/001-aplicabilidade-de-blueprint-por-device-PRD.md) — `PRD-20260823-1552-0f65`, entrega isolada
   - [002 — Aplicar Blueprint pré-preenchido](./discovery/automacao-por-dispositivo-novo/002-aplicar-blueprint-pre-preenchido-PRD.md) — `PRD-20260823-1552-2061`, depende do 001
   - [003 — Oferta no encerramento da configuração](./discovery/automacao-por-dispositivo-novo/003-oferta-no-fim-da-configuracao-PRD.md) — `PRD-20260823-1552-7f27`, depende do 001 e do 002
+  - [004 — Aplicabilidade sob demanda em `blueprint/applicable`](./discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ADR.md) — `ADR-20260823-1606-448c`, proposto: arquitetura do 001, com [atividades e ACs](./discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ACS.md)
