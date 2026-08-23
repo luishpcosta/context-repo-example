@@ -2,12 +2,20 @@
 # catálogo canônico (ai-lup-skills), instaladas aqui, não terceiros descartáveis: sem
 # a blueprintfy, scripts/context_config.py não acha o parser de front matter. A saída
 # delas (CONTEXT-MAP.md/CONTEXT.md) é versionada e continua legível sem elas.
-.claude/skills/ask/
-.claude/skills/blueprintfy/
-.claude/skills/context-repo-bootstrap/
-.claude/skills/skill-creator/
-.claude/skills/**/__pycache__/
-.claude/skills/**/*.pyc
+# Nenhuma skill é versionada aqui — nem as do catálogo ai-lup-skills (blueprintfy,
+# ask, context-repo-bootstrap, pm-create-pb, pm-create-prd, prd-to-adr), nem as de
+# outras plataformas agênticas. Ignorar a pasta inteira em vez de listar uma a uma:
+# instalar uma skill nova não deve exigir editar este arquivo.
+.claude/skills/
+.agents/skills/
+
+# Instalador de skills de terceiros (o pacote adhd-agent traz adhd/grill-me).
+# Ferramenta de quem está trabalhando, não dependência deste repositório —
+# os scripts daqui são stdlib-only e não usam node.
+node_modules/
+package.json
+package-lock.json
+skills-lock.json
 
 # Grafos temporários do /graphify, criados sob demanda pela skill ask. Descartáveis.
 .graphs/
