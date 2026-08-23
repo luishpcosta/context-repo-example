@@ -145,13 +145,26 @@ python3 scripts/scan_repos.py --pin
 
 ## Consultar o código a partir de uma pergunta de negócio
 
-Esta parte está sendo reconstruída. A skill `ask` ainda aponta para scripts que este
-repositório não tem mais (`query_catalog.py`), e volta a funcionar quando o eixo de
-componente entrar no grafo da `blueprintfy` — junto com a extração dela para o catálogo
-de skills. Até lá, `docs/como-perguntar-por-subdominio.md` descreve o fluxo antigo.
+Que código realiza um contexto (e os seus subcontextos):
+
+```bash
+python3 .claude/skills/blueprintfy/scripts/graph_query.py realiza "<Contexto>"
+```
+
+Devolve os componentes, os caminhos declarados dentro de cada um e as revisões — sem
+tocar a rede. Para ir de uma pergunta em linguagem natural até uma resposta lida do
+código, use a skill **`ask`**: ela escolhe o contexto pelo significado, resolve
+componente e caminho, baixa o código se preciso, roda o `/graphify` e traduz a resposta
+de volta para linguagem de produto. A resposta é leitura e apresentação — nada é
+gravado, a menos que você peça.
 
 ## Ferramentas
 
-As skills que este repositório carrega (`blueprintfy`, `graphify`) são instaladas
-localmente e não versionadas aqui — ver `.gitignore`. O que elas escrevem
-(`CONTEXT-MAP.md`, `CONTEXT.md`) é versionado normalmente e continua legível sem elas.
+Este repositório não versiona nenhuma skill: `blueprintfy`, `ask`,
+`context-repo-bootstrap` e `graphify` são instalações locais, vindas do catálogo
+`ai-lup-skills` (ver `.gitignore`). O que elas escrevem (`CONTEXT-MAP.md`,
+`CONTEXT.md`, docs de componente) é versionado normalmente e continua legível sem elas.
+
+O `blueprintfy` não é opcional: `scripts/context_config.py` importa dele o parser de
+front matter, e o `validate.py` importa o `repo_cache.py`. Sem ele, os scripts param
+com uma mensagem dizendo isso.

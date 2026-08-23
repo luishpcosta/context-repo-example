@@ -1,8 +1,0 @@
-# Configuração do context-repo — lida por scripts/*.py.
-# Substitua os valores; nenhum script tem nome de produto hardcoded.
-
-product: {{PRODUCT_NAME}}      # aparece no cabeçalho do catalog-info.yaml gerado
-owner: {{OWNER}}               # vira spec.owner nos blocos Domain/Component
-system: {{SYSTEM_SLUG}}        # nome do bloco kind: System
-repos_root: {{REPOS_ROOT}}     # onde os repositórios técnicos estão clonados (ex.: ..)
-domain_docs: docs/dominio      # onde ficam os CONTEXT.md por subdomínio

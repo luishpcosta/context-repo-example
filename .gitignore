@@ -2,7 +2,9 @@
 # catálogo canônico (ai-lup-skills), instaladas aqui, não terceiros descartáveis: sem
 # a blueprintfy, scripts/context_config.py não acha o parser de front matter. A saída
 # delas (CONTEXT-MAP.md/CONTEXT.md) é versionada e continua legível sem elas.
+.claude/skills/ask/
 .claude/skills/blueprintfy/
+.claude/skills/context-repo-bootstrap/
 .claude/skills/skill-creator/
 .claude/skills/**/__pycache__/
 .claude/skills/**/*.pyc
