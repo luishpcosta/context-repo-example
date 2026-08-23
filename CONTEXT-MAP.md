@@ -1,8 +1,21 @@
+---
+product: POC Home Assistant
+owner: home-assistant
+system: home-assistant
+repos_root: ..
+domain_docs: docs/dominio
+component_docs: docs/componentes
+---
+
 # Context Map
 
-Visão de produto e capacidades da POC Home Assistant — subdomínios de domínio (DDD),
-não a arquitetura técnica (essa vive em `catalog-info.yaml`). Este mapa é o único
-ponto de entrada para navegar a documentação de domínio deste repositório.
+Visão de produto e capacidades da POC Home Assistant — subdomínios de domínio (DDD)
+e os componentes técnicos que os realizam. Este mapa é o único ponto de entrada para
+navegar a documentação deste repositório: o que ele não alcança não existe para as
+ferramentas.
+
+O front matter acima é a configuração do repo (produto, dono, onde os repositórios
+técnicos estão clonados) — não há arquivo de config separado.
 
 ## Contextos
 
@@ -20,19 +33,37 @@ ponto de entrada para navegar a documentação de domínio deste repositório.
 - **Add-on & System Management → Automation & State Engine**: depende do core estar rodando para orquestrar em torno dele (Supervisor gerencia o processo do core).
 - **Build & Distribution**: subdomínio de suporte genérico, sem dependência de domínio — fornece a base de imagens usada pelos demais na entrega.
 
-## Correlação com catalog-info.yaml (arquitetura técnica)
+## Componentes técnicos
 
-Cada `Component` de `catalog-info.yaml` declara `spec.subdomain`, apontando para as
-entradas deste mapa — é o elo entre a visão de produto (aqui) e a visão as-is técnica
-(lá):
+Os repositórios de código que realizam os contextos acima. Cada arquivo guarda o
+`remote`, o `local` (relativo à raiz deste repo) e duas revisões: `commit`, o pin que
+só muda quando um humano decide, e `ultimo_visto`, a marca d'água que
+`scripts/scan_repos.py --update-refs` atualiza sozinho. Divergência entre as duas é o
+sinal de que o componente está descasado da documentação.
 
-| Subdomínio | Componentes (`catalog-info.yaml`) |
-|---|---|
-| Automation & State Engine | `core` |
-| Integration Platform | `core` |
-| Add-on & System Management | `supervisor`, `operating-system` |
-| Client Experience | `frontend`, `android`, `ios` |
-| Build & Distribution | `docker` |
+- [core](./docs/componentes/core.md) — backend Python: integrações e motor de automação
+- [frontend](./docs/componentes/frontend.md) — UI web (TypeScript/Lit)
+- [supervisor](./docs/componentes/supervisor.md) — add-ons, updates e backups
+- [operating-system](./docs/componentes/operating-system.md) — distro Linux dedicada (HAOS)
+- [docker](./docs/componentes/docker.md) — imagens base usadas pelos demais
+- [android](./docs/componentes/android.md) — app cliente Android
+- [ios](./docs/componentes/ios.md) — app cliente iOS
+
+## Correlação entre domínio e código
+
+A correlação mora no front matter de cada `CONTEXT.md`, no campo `realizado_por`, que
+aponta para um componente acima **e para o caminho dentro dele**:
+
+```yaml
+realizado_por:
+  - componente: core
+    caminho: homeassistant/components/automation
+```
+
+Ela é declarada uma vez só, na direção domínio → código, porque é essa a direção da
+consulta: dada uma pergunta de negócio, achar o código que a responde. O `caminho`
+existe para que o escopo de leitura do código seja **dado**, não heurística — sem ele,
+uma pergunta sobre automação obrigaria a varrer os 600MB do `core` inteiro.
 
 ## Documentos de negócio (as-is)
 
