@@ -105,4 +105,4 @@ quantos contextos uma ideia toca e achar o código que ela mexe são a mesma tra
 Para aprofundar até o código-fonte real, a skill `ask` responde sob demanda — leitura e
 apresentação, sem gravar nada, a menos que seja pedido.
 
-Nenhum ainda — nada em discovery no momento.
+- [Automações sugeridas ao adicionar um dispositivo](./discovery/automacao-por-dispositivo-novo/PRODUCT_BRIEF.md) — `PB-20260823-1540-6f00`, rascunho: usar o momento da adição de um Device para oferecer os Blueprints aplicáveis ao tipo dele
