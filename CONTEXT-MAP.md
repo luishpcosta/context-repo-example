@@ -106,3 +106,6 @@ Para aprofundar até o código-fonte real, a skill `ask` responde sob demanda �
 apresentação, sem gravar nada, a menos que seja pedido.
 
 - [Automações sugeridas ao adicionar um dispositivo](./discovery/automacao-por-dispositivo-novo/PRODUCT_BRIEF.md) — `PB-20260823-1540-6f00`, rascunho: usar o momento da adição de um Device para oferecer os Blueprints aplicáveis ao tipo dele
+  - [001 — Aplicabilidade de Blueprint por tipo de Device](./discovery/automacao-por-dispositivo-novo/001-aplicabilidade-de-blueprint-por-device-PRD.md) — `PRD-20260823-1552-0f65`, entrega isolada
+  - [002 — Aplicar Blueprint pré-preenchido](./discovery/automacao-por-dispositivo-novo/002-aplicar-blueprint-pre-preenchido-PRD.md) — `PRD-20260823-1552-2061`, depende do 001
+  - [003 — Oferta no encerramento da configuração](./discovery/automacao-por-dispositivo-novo/003-oferta-no-fim-da-configuracao-PRD.md) — `PRD-20260823-1552-7f27`, depende do 001 e do 002
