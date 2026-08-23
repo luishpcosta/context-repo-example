@@ -143,27 +143,194 @@ o código novo:
 python3 scripts/scan_repos.py --pin
 ```
 
-## Consultar o código a partir de uma pergunta de negócio
+## O fluxo
 
-Que código realiza um contexto (e os seus subcontextos):
+O repositório sustenta duas coisas que se alimentam: um **modelo** (o que existe, com
+que nome, realizado por que código) e um **discovery** (o que vai mudar). Ambos são
+markdown com front matter, e o `CONTEXT-MAP.md` alcança os dois.
 
-```bash
-python3 .claude/skills/blueprintfy/scripts/graph_query.py realiza "<Contexto>"
+```mermaid
+flowchart TB
+    subgraph modelo["Modelo — o que existe"]
+        MAP["CONTEXT-MAP.md<br/><i>marcador, config e índice</i>"]
+        CTX["docs/dominio/*/CONTEXT.md<br/><i>glossário e relações</i>"]
+        CMP["docs/componentes/*.md<br/><i>remote, pin, marca d'água</i>"]
+        MAP --> CTX
+        MAP --> CMP
+        CTX -->|realizado_por<br/>+ caminho| CMP
+    end
+
+    subgraph disc["Discovery — o que vai mudar"]
+        PB["PRODUCT_BRIEF.md"]
+        PRD["NNN-...-PRD.md"]
+        ADR["NNN-...-ADR.md<br/>+ ACS.md"]
+        PB -->|pm-create-prd| PRD
+        PRD -->|prd-to-adr| ADR
+    end
+
+    IDEIA(["ideia solta"]) -->|pm-create-pb| PB
+    modelo -->|"graph_query.py<br/>(as três skills leem daqui)"| disc
+    CMP -->|repo_cache + graphify| CODIGO(["código real<br/>nos repos técnicos"])
+    CODIGO -.->|"ask: confirma ou<br/>derruba a premissa"| disc
 ```
 
-Devolve os componentes, os caminhos declarados dentro de cada um e as revisões — sem
-tocar a rede. Para ir de uma pergunta em linguagem natural até uma resposta lida do
-código, use a skill **`ask`**: ela escolhe o contexto pelo significado, resolve
-componente e caminho, baixa o código se preciso, roda o `/graphify` e traduz a resposta
-de volta para linguagem de produto. A resposta é leitura e apresentação — nada é
-gravado, a menos que você peça.
+Quem escreve o quê:
+
+| Skill | Escreve | Nunca escreve |
+|---|---|---|
+| `blueprintfy` | glossário, relações, contratos | discovery |
+| `scan_repos.py` | docs de componente (remote, ref, marca d'água) | glossário, pin |
+| `context-repo-bootstrap` | o esqueleto, componentes novos | conteúdo de domínio |
+| `pm-create-pb` / `pm-create-prd` / `prd-to-adr` | `discovery/<assunto>/` | o modelo |
+| `ask` | **nada** — só lê e apresenta | tudo |
+
+## Como usar
+
+### Perguntar como o produto funciona
+
+```
+/ask como uma automação reage quando um dispositivo muda de estado?
+```
+
+A skill acha o contexto pelo significado, resolve componente e caminho, baixa o código
+se não estiver na máquina, roda o `/graphify` e responde em linguagem de produto. Sem
+a skill, os mesmos passos à mão:
+
+```bash
+# 1. que código realiza este contexto (e os subcontextos dele)?
+python3 .claude/skills/blueprintfy/scripts/graph_query.py realiza "Automation & State Engine"
+
+# 2. resolver para um diretório de verdade
+python3 -c "
+import sys; sys.path.insert(0, '.claude/skills/blueprintfy/scripts')
+import repo_cache, graph_query
+from pathlib import Path
+fm = graph_query.parse_frontmatter(Path('docs/componentes/core.md').read_text())
+print(repo_cache.resolve('core', fm, Path('.'), rev='latest').path)"
+
+# 3. graficar o caminho declarado e perguntar
+```
+
+### Levar uma ideia até arquitetura
+
+```
+/pm-create-pb   tive uma ideia: <descreva em texto livre>
+/pm-create-prd  detalha o PB-<id>
+/prd-to-adr     arquitetura do PRD-<id>
+```
+
+Cada uma lê o mesmo grafo antes de perguntar qualquer coisa — é por isso que o PB
+nasce sabendo quais contextos a ideia toca e onde o código correspondente mora.
+
+Um exemplo real deste repositório, em `discovery/automacao-por-dispositivo-novo/`: a
+entrevista do PB parou na segunda pergunta porque o `ask` foi ao código e descobriu que
+`Blueprint` e `Device Automation` já existiam — e não tinham nome em glossário nenhum.
+O PB só foi escrito depois de as duas lacunas serem fechadas, e o escopo dele virou o
+delta real em vez da ideia original.
+
+### Consultar o grafo direto
+
+```bash
+GQ=.claude/skills/blueprintfy/scripts/graph_query.py
+
+python3 $GQ realiza "<Contexto>"              # que código realiza isto
+python3 $GQ vigentes "<Contexto>"             # PB/PRD/ADR vivos x superados
+python3 $GQ impacto adr:ADR-<id> --saltos 5   # o que uma decisão alcança
+python3 $GQ valida-aresta "A" "B" --contrato X  # essa integração fura o contexto?
+python3 $GQ ciclos                            # acoplamento circular entre contextos
+```
+
+## Como criar um do zero
+
+Use a skill `context-repo-bootstrap`, que conduz as seis fases e traz os scripts
+prontos. O resumo do que ela faz, para quem quiser entender antes de rodar:
+
+```bash
+# 1. esqueleto, ao lado dos repositórios técnicos
+mkdir -p meu-context-repo/{scripts,docs/dominio,docs/componentes,discovery}
+cd meu-context-repo && git init
+
+# 2. CONTEXT-MAP.md com o front matter de config — ANTES de qualquer script rodar,
+#    porque é ele que marca a raiz do repositório
+# 3. .gitignore — ANTES do primeiro commit (.graphs/ e .repo-cache/ aparecem cedo)
+
+# 4. componentes, automático
+python3 scripts/scan_repos.py --write
+
+# 5. domínio, pela entrevista
+/blueprintfy  começar a modelagem de domínio aqui
+
+# 6. fechar a correlação: realizado_por em cada CONTEXT.md folha
+# 7. guarda
+python3 scripts/install_hooks.py && python3 scripts/validate.py
+```
+
+A ordem importa em dois pontos: o mapa precede tudo (é o marcador), e o `.gitignore`
+precede o primeiro commit.
+
+## Cuidados
+
+**Documento fora do mapa não existe.** É o modo de falha mais silencioso do padrão:
+nada quebra, o arquivo está lá, e nenhuma consulta o encontra. `validate.py` trata
+órfão como erro — de `CONTEXT.md`, de doc de componente e de PB/PRD/ADR. Ao criar
+qualquer documento, registre no mapa no mesmo movimento.
+
+**Não recrie um artefato gerado.** Se der vontade de "materializar um índice
+consolidado" a partir dos markdowns, não faça: é a segunda verdade que este formato
+existe para não ter. Uma view em memória, montada na hora e descartada, é o padrão
+certo — é o que o `graph_query.py` faz.
+
+**A correlação tem uma direção só.** `realizado_por` mora no `CONTEXT.md`, nunca no doc
+do componente. Declarar nos dois sentidos parece conveniente e é como o de-para acaba
+divergindo.
+
+**`commit` é pin, `ultimo_visto` é marca d'água.** Nunca mova o `commit` só porque o
+upstream andou — isso apaga a âncora de todo PB/PRD/ADR que o citou. `commit !=
+ultimo_visto` não é erro a consertar: é o aviso de que alguém precisa conferir a
+documentação contra o código novo. `--pin` é o ato deliberado que registra "conferi".
+
+**`caminho` errado é pior que `caminho` nenhum.** Omitido, vale o repositório inteiro —
+o que é o certo para a maioria. Declare só onde o componente for grande demais para ser
+lido inteiro com qualidade, e lembre que um caminho pode ter referências apontando para
+fora dele (foi assim que `components/blueprint` foi descoberto: `components/automation`,
+que estava declarado, importava de lá).
+
+**Nunca grave um termo de glossário sem validar.** Um termo errado se propaga para todo
+documento que o cita depois. Quem valida é a entrevista do `blueprintfy`.
+
+**O `ask` não escreve, e isso não é limitação.** Quando ele encontra uma lacuna,
+repassa: `blueprintfy` para linguagem, `context-repo-bootstrap` para componente ou
+caminho. Um único escritor por tipo de documento é o que impede o modelo de degradar.
+
+**Nenhuma skill é versionada aqui.** Um clone novo não traz `blueprintfy`, e sem ela os
+scripts param com mensagem explícita — `context_config.py` importa dela o parser de
+front matter. Instale do catálogo (`lup-skills add blueprintfy ask`) antes de rodar
+qualquer coisa.
+
+### Limitações conhecidas do grafo
+
+- **`contextos:` não vira aresta.** Só `afeta` cria aresta no `graph_query.py`. O
+  contexto *principal* de um PB/PRD/ADR é invisível para o `impacto` — o `vigentes`
+  acerta, porque lê `contextos`. Se precisar que o principal apareça na travessia,
+  liste-o também em `afeta`.
+- **`impacto` sub-reporta caminhos.** Ele dedupa por nó, então um componente com sete
+  caminhos declarados aparece com um só. Quem lista todos é o `realiza`.
 
 ## Ferramentas
 
-Este repositório não versiona nenhuma skill: `blueprintfy`, `ask`,
-`context-repo-bootstrap` e `graphify` são instalações locais, vindas do catálogo
-`ai-lup-skills` (ver `.gitignore`). O que elas escrevem (`CONTEXT-MAP.md`,
-`CONTEXT.md`, docs de componente) é versionado normalmente e continua legível sem elas.
+Este repositório não versiona nenhuma skill. Todas são instalações locais, vindas do
+catálogo `ai-lup-skills` (ver `.gitignore`):
+
+| Skill | Papel |
+|---|---|
+| `blueprintfy` | modelo de domínio; **obrigatória** — dela vêm `graph_query.py` e `repo_cache.py` |
+| `context-repo-bootstrap` | cria o repositório do zero, estende com componente ou contexto novo |
+| `ask` | pergunta de negócio → código, sem escrever nada |
+| `pm-create-pb` · `pm-create-prd` · `prd-to-adr` | discovery: ideia → PB → PRD → ADR + ACs |
+| `graphify` | lê o código e monta o grafo sob demanda |
+
+O que elas escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `discovery/`)
+é versionado normalmente e continua legível sem elas.
 
 O `blueprintfy` não é opcional: `scripts/context_config.py` importa dele o parser de
 front matter, e o `validate.py` importa o `repo_cache.py`. Sem ele, os scripts param
