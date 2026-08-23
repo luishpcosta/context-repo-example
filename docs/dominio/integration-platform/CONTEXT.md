@@ -3,6 +3,13 @@ contexto: Integration Platform
 compartilha_contrato_com:
   - contexto: Automation & State Engine
     contrato: Entity
+realizado_por:
+  - componente: core
+    caminho: homeassistant/config_entries.py
+  - componente: core
+    caminho: homeassistant/loader.py
+  - componente: core
+    caminho: homeassistant/helpers
 ---
 
 # Integration Platform
@@ -11,7 +18,8 @@ Subdomínio responsável por conectar o sistema ao mundo real — dispositivos e
 externos. É o que dá escala ao produto: cada integração nova amplia o que o Automation
 & State Engine consegue enxergar e controlar.
 
-Realizado tecnicamente pelo componente `core` (ver `../../../catalog-info.yaml`).
+Realizado tecnicamente pelo componente [`core`](../../componentes/core.md), nos caminhos
+listados em `realizado_por` no front matter acima.
 
 ## Linguagem
 
