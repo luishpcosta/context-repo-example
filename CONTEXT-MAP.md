@@ -79,11 +79,11 @@ cada `CONTEXT.md` que originou termos específicos.
 
 ## Planejamento (to-be)
 
-Discovery de produto vive em `discovery/<assunto>/`, um diretório por assunto em
+Discovery de produto vive em `docs/discovery/<assunto>/`, um diretório por assunto em
 refinamento:
 
 ```
-discovery/<assunto>/
+docs/discovery/<assunto>/
 ├── PRODUCT_BRIEF.md                   ← o PB (skill pm-create-pb)
 ├── NNN-slug-<assunto>-PRD.md          ← os PRDs (skill pm-create-prd)
 └── NNN-slug-<assunto>-ADR.md          ← a arquitetura (skill prd-to-adr)
@@ -105,8 +105,8 @@ quantos contextos uma ideia toca e achar o código que ela mexe são a mesma tra
 Para aprofundar até o código-fonte real, a skill `ask` responde sob demanda — leitura e
 apresentação, sem gravar nada, a menos que seja pedido.
 
-- [Automações sugeridas ao adicionar um dispositivo](./discovery/automacao-por-dispositivo-novo/PRODUCT_BRIEF.md) — `PB-20260823-1540-6f00`, rascunho: usar o momento da adição de um Device para oferecer os Blueprints aplicáveis ao tipo dele
-  - [001 — Aplicabilidade de Blueprint por tipo de Device](./discovery/automacao-por-dispositivo-novo/001-aplicabilidade-de-blueprint-por-device-PRD.md) — `PRD-20260823-1552-0f65`, entrega isolada
-  - [002 — Aplicar Blueprint pré-preenchido](./discovery/automacao-por-dispositivo-novo/002-aplicar-blueprint-pre-preenchido-PRD.md) — `PRD-20260823-1552-2061`, depende do 001
-  - [003 — Oferta no encerramento da configuração](./discovery/automacao-por-dispositivo-novo/003-oferta-no-fim-da-configuracao-PRD.md) — `PRD-20260823-1552-7f27`, depende do 001 e do 002
-  - [004 — Aplicabilidade sob demanda em `blueprint/applicable`](./discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ADR.md) — `ADR-20260823-1606-448c`, proposto: arquitetura do 001, com [atividades e ACs](./discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ACS.md)
+- [Automações sugeridas ao adicionar um dispositivo](./docs/discovery/automacao-por-dispositivo-novo/PRODUCT_BRIEF.md) — `PB-20260823-1540-6f00`, rascunho: usar o momento da adição de um Device para oferecer os Blueprints aplicáveis ao tipo dele
+  - [001 — Aplicabilidade de Blueprint por tipo de Device](./docs/discovery/automacao-por-dispositivo-novo/001-aplicabilidade-de-blueprint-por-device-PRD.md) — `PRD-20260823-1552-0f65`, entrega isolada
+  - [002 — Aplicar Blueprint pré-preenchido](./docs/discovery/automacao-por-dispositivo-novo/002-aplicar-blueprint-pre-preenchido-PRD.md) — `PRD-20260823-1552-2061`, depende do 001
+  - [003 — Oferta no encerramento da configuração](./docs/discovery/automacao-por-dispositivo-novo/003-oferta-no-fim-da-configuracao-PRD.md) — `PRD-20260823-1552-7f27`, depende do 001 e do 002
+  - [004 — Aplicabilidade sob demanda em `blueprint/applicable`](./docs/discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ADR.md) — `ADR-20260823-1606-448c`, proposto: arquitetura do 001, com [atividades e ACs](./docs/discovery/automacao-por-dispositivo-novo/004-aplicabilidade-de-blueprint-por-device-ACS.md)

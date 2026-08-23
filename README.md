@@ -181,7 +181,7 @@ Quem escreve o quê:
 | `blueprintfy` | glossário, relações, contratos | discovery |
 | `scan_repos.py` | docs de componente (remote, ref, marca d'água) | glossário, pin |
 | `context-repo-bootstrap` | o esqueleto, componentes novos | conteúdo de domínio |
-| `pm-create-pb` / `pm-create-prd` / `prd-to-adr` | `discovery/<assunto>/` | o modelo |
+| `pm-create-pb` / `pm-create-prd` / `prd-to-adr` | `docs/discovery/<assunto>/` | o modelo |
 | `ask` | **nada** — só lê e apresenta | tudo |
 
 ## Como usar
@@ -222,7 +222,7 @@ print(repo_cache.resolve('core', fm, Path('.'), rev='latest').path)"
 Cada uma lê o mesmo grafo antes de perguntar qualquer coisa — é por isso que o PB
 nasce sabendo quais contextos a ideia toca e onde o código correspondente mora.
 
-Um exemplo real deste repositório, em `discovery/automacao-por-dispositivo-novo/`: a
+Um exemplo real deste repositório, em `docs/discovery/automacao-por-dispositivo-novo/`: a
 entrevista do PB parou na segunda pergunta porque o `ask` foi ao código e descobriu que
 `Blueprint` e `Device Automation` já existiam — e não tinham nome em glossário nenhum.
 O PB só foi escrito depois de as duas lacunas serem fechadas, e o escopo dele virou o
@@ -247,7 +247,7 @@ prontos. O resumo do que ela faz, para quem quiser entender antes de rodar:
 
 ```bash
 # 1. esqueleto, ao lado dos repositórios técnicos
-mkdir -p meu-context-repo/{scripts,docs/dominio,docs/componentes,discovery}
+mkdir -p meu-context-repo/{scripts,docs/dominio,docs/componentes,docs/discovery}
 cd meu-context-repo && git init
 
 # 2. CONTEXT-MAP.md com o front matter de config — ANTES de qualquer script rodar,
@@ -329,7 +329,7 @@ catálogo `ai-lup-skills` (ver `.gitignore`):
 | `pm-create-pb` · `pm-create-prd` · `prd-to-adr` | discovery: ideia → PB → PRD → ADR + ACs |
 | `graphify` | lê o código e monta o grafo sob demanda |
 
-O que elas escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `discovery/`)
+O que elas escrevem (`CONTEXT-MAP.md`, `CONTEXT.md`, docs de componente, `docs/discovery/`)
 é versionado normalmente e continua legível sem elas.
 
 O `blueprintfy` não é opcional: `scripts/context_config.py` importa dele o parser de
