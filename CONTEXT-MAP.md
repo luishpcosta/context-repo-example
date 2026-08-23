@@ -75,4 +75,23 @@ cada `CONTEXT.md` que originou termos específicos.
 
 ## Planejamento (to-be)
 
-Nenhum ainda — POC em estágio de modelagem de domínio inicial.
+Product Briefs e PRDs em refinamento vivem em `docs/refinamento/<contexto>/<funcionalidade>/`:
+
+```
+docs/refinamento/<contexto>/<funcionalidade>/
+├── PRODUCT_BRIEF.md              ← o PB (skill pm-create-pb)
+├── NNN-slug-{funcionalidade}-PRD.md   ← os PRDs (skill pm-create-prd)
+└── NNN-slug-{funcionalidade}-ADR.md   ← a arquitetura (skill prd-to-adr)
+```
+
+Cada documento criado aqui precisa ser referenciado nesta seção — o mapa é o único
+ponto de entrada, e o que ele não alcança é invisível para o grafo e para as consultas.
+
+O que distingue este repositório de um repositório de planejamento comum é que o PB
+nasce sabendo onde o código está: `pm-create-pb` e `pm-create-prd` leem o mesmo grafo
+que a seção "Correlação entre domínio e código" alimenta, então medir quantos contextos
+uma ideia toca e qual código ela mexe é a mesma travessia. Para aprofundar o
+refinamento até o código-fonte real, a skill `ask` responde sob demanda — leitura e
+apresentação, sem gravar nada, a menos que seja pedido.
+
+Nenhum ainda — nada em refinamento no momento.
