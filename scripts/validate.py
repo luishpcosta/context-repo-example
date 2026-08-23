@@ -78,6 +78,41 @@ def links(texto: str, titulo: str) -> list[tuple[str, Path]]:
     ]
 
 
+def alcancaveis(texto: str) -> set[Path]:
+    """Todo caminho que o mapa alcança, em qualquer seção.
+
+    Um link para um diretório alcança tudo que está dentro dele — é assim que o
+    grafo do blueprintfy navega, e a validação tem que concordar com ele.
+    """
+    achados: set[Path] = set()
+    for m in LINK_RE.finditer(texto):
+        alvo = (ROOT / m.group("path").lstrip("./")).resolve()
+        achados.add(alvo)
+        if alvo.is_dir():
+            achados.update(f.resolve() for f in alvo.rglob("*.md"))
+        else:
+            achados.update(f.resolve() for f in alvo.parent.glob("*.md"))
+    return achados
+
+
+def validar_docs_com_id(texto: str) -> None:
+    """PB/PRD/ADR fora do mapa é invisível para o grafo — mesmo modo de falha que
+    um CONTEXT.md órfão, e igualmente silencioso."""
+    alcance = alcancaveis(texto)
+    ignorar = {".git", ".claude", ".agents", "node_modules", ".graphs", ".repo-cache"}
+    for doc in ROOT.rglob("*.md"):
+        if any(parte in ignorar for parte in doc.parts):
+            continue
+        fm = parse_frontmatter(doc.read_text(encoding="utf-8"))
+        doc_id = fm.get("id")
+        if not doc_id or not str(doc_id).startswith(("PB-", "PRD-", "ADR-")):
+            continue
+        if doc.resolve() not in alcance:
+            erro(f"{doc_id} órfão: `{_rel(doc)}` não é alcançável pelo "
+                 f"{MAP_FILENAME} — ele não entra no grafo, então nenhuma consulta "
+                 "de impacto o encontra. Registre-o na seção de planejamento do mapa.")
+
+
 def validar_mapa(texto: str) -> tuple[set[Path], set[Path]]:
     cfg = parse_frontmatter(texto)
     if not cfg:
@@ -244,6 +279,7 @@ def main() -> int:
     validar_componentes(componentes)
     validar_relacoes(contextos, componentes)
     validar_caminhos(contextos, componentes, offline)
+    validar_docs_com_id(texto)
 
     for a in avisos:
         print(f"  aviso: {a}")
